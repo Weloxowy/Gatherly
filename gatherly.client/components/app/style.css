@@ -1,0 +1,8 @@
+﻿.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh; /* Dodaj wysokość, aby centrowanie było zarówno w pionie, jak i w poziomie */
+    overflow: hidden; /* Ukrywa wszelkie elementy wychodzące poza kontener */
+}

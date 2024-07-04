@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./gatherly.client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./gatherly.server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
