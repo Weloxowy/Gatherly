@@ -1,20 +1,142 @@
 using System.Reflection;
+using System.Text;
+using DotNetEnv;
 using FluentMigrator.Runner;
-using gatherly.server.Models.Users;
+using gatherly.server;
+using gatherly.server.Models.Authentication.SsoSession;
+using gatherly.server.Models.Authentication.UserEntity;
+using gatherly.server.Models.Tokens.BlacklistToken;
+using gatherly.server.Models.Tokens.RefreshToken;
+using gatherly.server.Models.Tokens.TokenEntity;
+using gatherly.server.Persistence.Authentication.SsoSession;
+using gatherly.server.Persistence.Authentication.UserEntity;
+using gatherly.server.Persistence.Tokens.BlacklistToken;
+using gatherly.server.Persistence.Tokens.RefreshToken;
+using gatherly.server.Persistence.Tokens.TokenEntity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using NHibernate;
+
+Env.Load(".env");
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddSingleton(NHibernateHelper.SessionFactory);
+builder.Services.AddScoped<IUserEntityService, UserEntityService>();
+builder.Services.AddScoped<ISsoSessionService, SsoSessionService>();
+builder.Services.AddScoped<ITokenEntityService, TokenEntityService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<IBlacklistTokenService, BlacklistTokenService>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+// Add controllers and endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+// Konfiguracja Swaggera
 builder.Services.AddSwaggerGen(c =>
 {
-    c.EnableAnnotations();
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "API Gatherly", Description = "Publiczny interfejs dla endpointów warstwy serwerowej.",Version = "0.0.1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,
+        $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
+
+    // Konfiguracja JWT
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
+              Enter 'Bearer' [space] and then your token in the text input below.
+              \r\n\r\nExample: 'Bearer 12345abcdef'",
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
+        }
+    };
+
+    c.AddSecurityDefinition("Bearer", securityScheme);
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+
+            },
+            new List<string>()
+        }
+    });
 });
+
+//Authentication and Authorization
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = "localhost:44329",
+        ValidAudience = "localhost:3000",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Env.GetString("SECRET"))),
+        //ClockSkew = TimeSpan.Zero
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine("Authentication failed: " + context.Exception.Message);
+            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+            {
+                context.Response.Headers.Add("Token-Expired", "true");
+            }
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            Console.WriteLine("Authentication challenge: " + context.Error + " " + context.ErrorDescription);
+            context.HandleResponse();
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            var result = JsonConvert.SerializeObject(new { error = "You are not authorized" });
+            return context.Response.WriteAsync(result);
+        },
+        OnMessageReceived = context =>
+        {
+            Console.WriteLine("Token received: " + context.Token);
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine("Token validated for user: " + context.Principal.Identity.Name);
+            return Task.CompletedTask;
+        }
+    };
+});
+
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
@@ -36,7 +158,7 @@ builder.Services.AddCors(options =>
 //Add DB Context
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlServer(
-        "Server=localhost\\SQLEXPRESS;Database=Gatherly;Integrated Security=SSPI;Application Name=Gatherly; TrustServerCertificate=true;"
+        "Server=localhost\\SQLEXPRESS;Database=Gatherly;Integrated Security=SSPI;Application Name=Gatherly; TrustServerCertificate=true;MultipleActiveResultSets=True"
         , sqlOptions => sqlOptions.MigrationsAssembly(typeof(DataContext).Assembly.GetName().Name))
 );
 
@@ -46,24 +168,16 @@ builder.Services.AddFluentMigratorCore() // Move FluentMigrator registration her
     {
         c.AddSqlServer2016()
             .WithGlobalConnectionString(
-                "Server=localhost\\SQLEXPRESS;Database=Gatherly;Integrated Security=SSPI;Application Name=Gatherly; TrustServerCertificate=true;")
+                "Server=localhost\\SQLEXPRESS;Database=Gatherly;Integrated Security=SSPI;Application Name=Gatherly; TrustServerCertificate=true;MultipleActiveResultSets=True")
             .ScanIn(Assembly.GetExecutingAssembly()).For.All();
     })
     .AddLogging(config => config.AddFluentMigratorConsole());
 
-//Authentication and Authorization
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options => { builder.Configuration.GetRequiredSection("BearerAuthOptions").Bind(options); });
-
-builder.Services.AddAuthorization();
 
 var app = builder.Build();
 using var scope = app.Services.CreateScope();
+
+
 var migrator = scope.ServiceProvider.GetService<IMigrationRunner>();
 
 if (migrator != null)
@@ -89,11 +203,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
 app.UseAuthentication();
+app.UseAuthorization();
+
 
 app.MapControllers();
-
 app.MapFallbackToFile("/index.html");
 
 app.Run();
@@ -105,5 +219,5 @@ public class DataContext : DbContext
     {
     }
 
-    public DbSet<Users> Users { get; set; }
+    public DbSet<UserEntity> User { get; set; }
 }
