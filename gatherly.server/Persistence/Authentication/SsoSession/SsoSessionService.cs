@@ -1,11 +1,11 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using gatherly.server.Models.Authentication.SsoSession;
+﻿using gatherly.server.Models.Authentication.SsoSession;
 
 namespace gatherly.server.Persistence.Authentication.SsoSession;
 
 public class SsoSessionService : ISsoSessionService
 {
-    private readonly ISsoSessionRepository _ssoSessionRepository = new SsoSessionRepository(NHibernateHelper.SessionFactory);
+    private readonly ISsoSessionRepository _ssoSessionRepository =
+        new SsoSessionRepository(NHibernateHelper.SessionFactory);
 
 
     public Models.Authentication.SsoSession.SsoSession CreateSso(Guid userId, string email)
@@ -39,9 +39,7 @@ public class SsoSessionService : ISsoSessionService
     }
 
     public void ExpireSso(Guid sessionId)
-    { 
+    {
         _ssoSessionRepository.ExpireSso(sessionId);
     }
-    
-    
 }

@@ -13,12 +13,11 @@ using gatherly.server.Persistence.Authentication.UserEntity;
 using gatherly.server.Persistence.Tokens.BlacklistToken;
 using gatherly.server.Persistence.Tokens.RefreshToken;
 using gatherly.server.Persistence.Tokens.TokenEntity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
-using NHibernate;
 
 Env.Load(".env");
 
@@ -36,6 +35,7 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 // Add controllers and endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
 // Konfiguracja Swaggera
 builder.Services.AddSwaggerGen(c =>
 {
@@ -63,7 +63,7 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddSecurityDefinition("Bearer", securityScheme);
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -75,8 +75,7 @@ builder.Services.AddSwaggerGen(c =>
                 },
                 Scheme = "oauth2",
                 Name = "Bearer",
-                In = ParameterLocation.Header,
-
+                In = ParameterLocation.Header
             },
             new List<string>()
         }
@@ -98,7 +97,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = "localhost:44329",
         ValidAudience = "localhost:3000",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Env.GetString("SECRET"))),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Env.GetString("SECRET")))
         //ClockSkew = TimeSpan.Zero
     };
 
@@ -108,9 +107,7 @@ builder.Services.AddAuthentication(options =>
         {
             Console.WriteLine("Authentication failed: " + context.Exception.Message);
             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
-            {
                 context.Response.Headers.Add("Token-Expired", "true");
-            }
             return Task.CompletedTask;
         },
         OnChallenge = context =>
@@ -140,13 +137,9 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowSpecificOrigin", builder =>
     {
-        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins")?.Get<string[]>() ??
-                             Array.Empty<string>();
-
-        policy
-            .WithOrigins( /*allowedOrigins*/"http://localhost:3000")
+        builder.WithOrigins("https://localhost:3000")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials()
@@ -190,7 +183,7 @@ else
     throw new Exception("Migration fault");
 }
 
-app.UseCors("AllowAllOrigins");
+app.UseCors("AllowSpecificOrigin");
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -220,4 +213,7 @@ public class DataContext : DbContext
     }
 
     public DbSet<UserEntity> User { get; set; }
+    public DbSet<SsoSession> SsoSessions { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<BlacklistToken> BlacklistTokens { get; set; }
 }

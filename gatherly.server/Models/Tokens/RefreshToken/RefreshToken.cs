@@ -2,8 +2,10 @@
 
 public class RefreshToken
 {
-    public RefreshToken() : base() {}
-    
+    public RefreshToken()
+    {
+    }
+
     public RefreshToken(Guid id, string token, Guid userId, DateTime expiration, bool isRevoked)
     {
         Id = id;

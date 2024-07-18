@@ -6,6 +6,5 @@ public class Register : PageModel
 {
     public void OnGet()
     {
-        
     }
 }

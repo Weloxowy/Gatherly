@@ -8,8 +8,8 @@ public interface IUserEntityRepository
     public UserEntity? GetUserInfo(Guid id); //pobieranie danych o uzytkowniku poprzez id
     public bool IsUserExists(string email); //sprawdzenie czy uzytkownik istnieje
     public bool IsUserAdmin(string email); //sprawdzenie czy uzytkownik jest adminem
-    public Models.Authentication.UserEntity.UserEntity? PatchUserInfo(UserEntityDTOUpdate newData, string email);
+    public UserEntity? PatchUserInfo(UserEntityDTOUpdate newData, string email);
     public bool DeleteUserInfo(string email);
-    public Models.Authentication.UserEntity.UserEntity? CreateNewUser(UserEntityDTOCreate newData);
-    public Models.Authentication.UserEntity.UserEntity? VerifyUser(UserEntityDTOLoginPassword data);
+    public UserEntity? CreateNewUser(UserEntityDTOCreate newData);
+    public UserEntity? VerifyUser(UserEntityDTOLoginPassword data);
 }

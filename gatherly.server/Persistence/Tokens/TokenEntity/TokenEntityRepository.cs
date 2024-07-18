@@ -1,16 +1,26 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Tokens.TokenEntity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace gatherly.server.Persistence.Tokens.TokenEntity;
 
+/// <summary>
+///     Repository for managing token entities.
+/// </summary>
 public class TokenEntityRepository : ITokenEntityRepository
 {
     private readonly string _secret = Environment.GetEnvironmentVariable("SECRET");
-    
-    public string GenerateToken(Models.Authentication.UserEntity.UserEntity user, string jti)
+
+    /// <summary>
+    ///     Generates a JWT token for a given user.
+    /// </summary>
+    /// <param name="user">The user entity.</param>
+    /// <param name="jti">The unique identifier for the token.</param>
+    /// <returns>A JWT token string.</returns>
+    public string GenerateToken(UserEntity user, string jti)
     {
         var claims = new[]
         {
@@ -24,9 +34,9 @@ public class TokenEntityRepository : ITokenEntityRepository
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: "localhost:44329",
-            audience: "localhost:3000",
-            claims: claims,
+            "localhost:44329",
+            "localhost:3000",
+            claims,
             expires: DateTime.Now.AddMinutes(15),
             signingCredentials: creds
         );
@@ -34,11 +44,16 @@ public class TokenEntityRepository : ITokenEntityRepository
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    /// <summary>
+    ///     Validates a JWT token and returns the claims principal if valid.
+    /// </summary>
+    /// <param name="token">The JWT token string.</param>
+    /// <returns>The claims principal if the token is valid; otherwise, null.</returns>
     public ClaimsPrincipal ValidateToken(string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_secret);
-        
+
         try
         {
             var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
@@ -50,11 +65,11 @@ public class TokenEntityRepository : ITokenEntityRepository
                 ValidIssuer = "localhost:44329",
                 ValidAudience = "localhost:3000",
                 IssuerSigningKey = new SymmetricSecurityKey(key)
-            }, out SecurityToken validatedToken);
+            }, out var validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
             var jti = jwtToken.Claims.First(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
-            
+
             return principal;
         }
         catch
@@ -62,28 +77,27 @@ public class TokenEntityRepository : ITokenEntityRepository
             return null;
         }
     }
-    
+
+    /// <summary>
+    ///     Extracts the email from the JWT token present in the request header.
+    /// </summary>
+    /// <param name="httpContext">The HTTP context containing the request header.</param>
+    /// <returns>The email extracted from the token if valid; otherwise, null.</returns>
     public string GetEmailFromRequestHeader(HttpContext httpContext)
     {
-        // Pobranie tokena JWT z nagłówka żądania
         var authorizationHeader = httpContext.Request.Headers["Authorization"].FirstOrDefault();
-        if (authorizationHeader == null || !authorizationHeader.StartsWith("Bearer "))
-        {
-            return null;
-        }
+        if (authorizationHeader == null || !authorizationHeader.StartsWith("Bearer ")) return null;
 
         var token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-        // Zdekodowanie tokena JWT w celu uzyskania identyfikatora użytkownika
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
-        var userMail = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "sub"); // "sub" jest często używanym typem claimu dla identyfikatora użytkownika
+        var userMail =
+            jwtToken.Claims.FirstOrDefault(claim =>
+                claim.Type == "sub");
 
-        if (userMail == null)
-        {
-            return null;
-        }
+        if (userMail == null) return null;
 
-        return userMail.Value.ToString();
+        return userMail.Value;
     }
 }

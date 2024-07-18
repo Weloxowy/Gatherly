@@ -1,14 +1,14 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Tokens.TokenEntity;
 
 namespace gatherly.server.Persistence.Tokens.TokenEntity;
 
 public class TokenEntityService : ITokenEntityService
 {
-    private TokenEntityRepository _tokenEntityRepository = new TokenEntityRepository();
+    private readonly TokenEntityRepository _tokenEntityRepository = new();
 
-    public string GenerateToken(Models.Authentication.UserEntity.UserEntity user, string jti)
+    public string GenerateToken(UserEntity user, string jti)
     {
         return _tokenEntityRepository.GenerateToken(user, jti);
     }
@@ -17,10 +17,9 @@ public class TokenEntityService : ITokenEntityService
     {
         return _tokenEntityRepository.ValidateToken(token);
     }
-    
+
     public string GetEmailFromRequestHeader(HttpContext httpContext)
     {
         return _tokenEntityRepository.GetEmailFromRequestHeader(httpContext);
     }
-    
 }

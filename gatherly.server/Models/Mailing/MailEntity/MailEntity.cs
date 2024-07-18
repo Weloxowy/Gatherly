@@ -2,7 +2,7 @@
 
 public class MailEntity
 {
-    public MailEntity(): base()
+    public MailEntity()
     {
     }
 

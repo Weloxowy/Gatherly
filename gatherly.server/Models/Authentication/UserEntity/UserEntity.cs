@@ -2,11 +2,12 @@
 
 public class UserEntity
 {
-    public UserEntity() : base()
+    public UserEntity()
     {
     }
-    
-    public UserEntity(Guid id, string name, string email, string avatarName, DateTime? lastTimeLogged, UserRole userRole, string passwordHash)
+
+    public UserEntity(Guid id, string name, string email, string avatarName, DateTime? lastTimeLogged,
+        UserRole userRole, string passwordHash)
     {
         Id = id;
         Name = name;

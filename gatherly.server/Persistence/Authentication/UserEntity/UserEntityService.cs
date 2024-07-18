@@ -5,8 +5,8 @@ namespace gatherly.server.Persistence.Authentication.UserEntity;
 
 public class UserEntityService : IUserEntityService
 {
-    private readonly UserEntityRepository _userEntityRepository = new UserEntityRepository(NHibernateHelper.SessionFactory);
-    
+    private readonly UserEntityRepository _userEntityRepository = new(NHibernateHelper.SessionFactory);
+
     public Models.Authentication.UserEntity.UserEntity? GetUserInfo(string email)
     {
         return _userEntityRepository.GetUserInfo(email);
@@ -29,7 +29,7 @@ public class UserEntityService : IUserEntityService
 
     public Models.Authentication.UserEntity.UserEntity? PatchUserInfo(UserEntityDTOUpdate newData, string email)
     {
-        return _userEntityRepository.PatchUserInfo(newData,email);
+        return _userEntityRepository.PatchUserInfo(newData, email);
     }
 
     public bool DeleteUserInfo(string email)

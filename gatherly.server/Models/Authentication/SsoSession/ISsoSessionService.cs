@@ -9,5 +9,4 @@ public interface ISsoSessionService
     bool IsTokenAlive(Guid sessionId); //czy token istnieje
     SsoSession SsoDetails(string sessionId); //sprawdzenie szczegółów wygenerowanego kodu
     void ExpireSso(Guid sessionId); //deaktywacja kodu (w przypadku wysłania kilku kodów)
-
 }

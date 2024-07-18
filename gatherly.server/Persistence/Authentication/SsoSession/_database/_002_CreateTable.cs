@@ -5,7 +5,7 @@ namespace gatherly.server.Persistence.Authentication.SsoSession._database;
 [Migration(002)]
 public class _002_CreateTable : Migration
 {
-    readonly string _tableName = "SsoSession";
+    private readonly string _tableName = "SsoSession";
 
     public override void Up()
     {
@@ -15,8 +15,6 @@ public class _002_CreateTable : Migration
                 .WithColumn(nameof(Models.Authentication.SsoSession.SsoSession.Id)).AsGuid().NotNullable().PrimaryKey()
                 .WithColumn(nameof(Models.Authentication.SsoSession.SsoSession.UserId)).AsGuid().NotNullable()
                 .WithColumn(nameof(Models.Authentication.SsoSession.SsoSession.UserEmail)).AsString().NotNullable()
-                .WithColumn(nameof(Models.Authentication.SsoSession.SsoSession.IsVerified)).AsBoolean().NotNullable()
-                .Unique()
                 .WithColumn(nameof(Models.Authentication.SsoSession.SsoSession.CreatedAt)).AsDateTime().NotNullable()
                 .WithColumn(nameof(Models.Authentication.SsoSession.SsoSession.ExpiresAt)).AsDateTime().Nullable()
                 .WithColumn(nameof(Models.Authentication.SsoSession.SsoSession.VerificationCode)).AsString()

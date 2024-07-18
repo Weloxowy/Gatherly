@@ -13,6 +13,5 @@ public class SsoSessionMapping : ClassMap<SsoSession>
         Map(x => x.VerificationCode);
         Map(x => x.CreatedAt);
         Map(x => x.ExpiresAt);
-        Map(x => x.IsVerified);
     }
 }
