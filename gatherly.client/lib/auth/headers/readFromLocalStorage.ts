@@ -1,6 +1,5 @@
 ﻿"use client"
 
 export function readFromLocalStorage(itemName: string): string | null {
-        return localStorage.getItem(itemName);
-    return null;
+    return localStorage.getItem(itemName);
 }

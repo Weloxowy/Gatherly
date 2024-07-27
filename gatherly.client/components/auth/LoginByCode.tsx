@@ -1,27 +1,25 @@
 ﻿import React, {useState} from "react";
-import {Anchor, Button, Group, TextInput, Container, Title, Text, Paper, PinInput} from "@mantine/core";
+import {Anchor, Button, Group, PinInput, TextInput} from "@mantine/core";
 import {useForm} from "@mantine/form";
-import sendSsoCode from "@/lib/auth/sendSsoCode";
-import sendReturnedCode from "@/lib/auth/sendReturnedCode";
-import Link from "next/link";
-import {Struct} from "next/dist/compiled/superstruct";
+import sendSsoCode from "../../lib/auth/sendSsoCode";
+import sendReturnedCode from "../../lib/auth/sendReturnedCode";
+import {AuthProps} from "@/lib/interfaces/types";
 
-const LoginByCode: React.FC = ({setAuthMethod, options}: Struct<object, string>) => {
-    const [step, setStep] = useState<number>(1);    const [email, setEmail] = useState('');
+const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
+    const [step, setStep] = useState<number>(1);
+    const [email, setEmail] = useState('');
     const form1 = useForm({
         initialValues: {
             email: '',
-        },
-        validate: {
-            //email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'),
+        }, validate: {
+            //email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'), //TODO: odkomentować
         },
     });
 
     const form2 = useForm({
         initialValues: {
             code: '',
-        },
-        validate: {
+        }, validate: {
             code: (value) => (value.length == 6 ? null : 'Kod powinien mieć 6 cyfr'),
         },
     });
@@ -52,12 +50,11 @@ const LoginByCode: React.FC = ({setAuthMethod, options}: Struct<object, string>)
     };
 
 
-    const handleSubmitForm2 = async (values: { code: string, email: string }) => {
+    const handleSubmitForm2 = async (values: { code: string }) => {
         try {
-            values.email = email; // zakładam, że `email` jest dostępny w kontekście
-            const res = await sendReturnedCode(values.email, values.code);
+            await sendReturnedCode(email, values.code);
             console.log("Kod weryfikacyjny:", values.code);
-            window.location.href = "/testLogin";
+            window.location.href = "/autorization";
         } catch (error: any) {
             console.error('Error in handleSubmitForm2:', error);
             switch (error.code) {
@@ -78,10 +75,8 @@ const LoginByCode: React.FC = ({setAuthMethod, options}: Struct<object, string>)
     };
 
 
-    return (
-        <>
-            {step === 1 ? (
-                <form onSubmit={form1.onSubmit(handleSubmitForm1)}>
+    return (<>
+            {step === 1 ? (<form onSubmit={form1.onSubmit(handleSubmitForm1)}>
                     <TextInput size="md" label="Email" key={form1.key('email')}
                                {...form1.getInputProps('email')}
                                placeholder="mail@gatherly.com" required/>
@@ -97,19 +92,15 @@ const LoginByCode: React.FC = ({setAuthMethod, options}: Struct<object, string>)
                     <Button fullWidth mt="lg" type="submit">
                         Zaloguj
                     </Button>
-                </form>
-            ) : (
-                <form onSubmit={form2.onSubmit(handleSubmitForm2)}>
+                </form>) : (<form onSubmit={form2.onSubmit(handleSubmitForm2)}>
                     <PinInput size="md" key={form2.key('code')}
                               {...form2.getInputProps('code')} length={6} mask type="number" inputType="number"
                               inputMode="numeric"/>
                     <Button fullWidth mt="lg" type="submit">
                         Zatwierdź kod
                     </Button>
-                </form>
-            )}
-        </>
-    );
+                </form>)}
+        </>);
 };
 
 export default LoginByCode;

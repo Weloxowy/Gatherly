@@ -1,0 +1,8 @@
+﻿.whole{
+    padding: var(--mantine-spacing-lg);
+    padding-left: 4rem;
+}
+
+.name{
+    padding-left: 1rem;
+}

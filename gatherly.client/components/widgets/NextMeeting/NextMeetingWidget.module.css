@@ -1,0 +1,13 @@
+﻿
+.body{
+    flex: 1;
+    margin-top: 0.5rem;
+    padding-left: 1rem; /* Dodaj padding, aby uniknąć problemów ze scrollbar */
+    margin-bottom: 1rem; /* Dodano margin-bottom aby zrobić miejsce na TextInput i Button */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Zapewnia równomierne rozmieszczenie elementów */
+    align-items: stretch;
+    align-content: stretch;
+}
+

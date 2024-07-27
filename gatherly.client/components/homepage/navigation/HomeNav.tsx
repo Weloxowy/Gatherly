@@ -1,24 +1,16 @@
-﻿
-import React from "react";
-import {
-    Button, rem,
-    Title
-} from "@mantine/core";
+﻿import React, {useState} from "react";
+import {Button, Container, Group, rem, Title} from "@mantine/core";
 import Link from "next/link";
 import {cabinet} from "@/app/fonts";
-import { useState } from 'react';
-import { Container, Group } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import classes from './HomeNav.module.css';
 
 const links = [
-    { link: '#home', label: 'Dołącz' },
-    { link: '#functions', label: 'Funkcje' },
-    { link: '#invite', label: 'Zaproś znajomych' },
+    {link: '#home', label: 'Dołącz'},
+    {link: '#functions', label: 'Funkcje'},
+    {link: '#invite', label: 'Zaproś znajomych'},
 ];
 
 const HomeNav: React.FC = () => {
-    const [opened, { toggle }] = useDisclosure(false);
     const [active, setActive] = useState(links[0].link);
 
     const items = links.map((link) => (
@@ -35,7 +27,7 @@ const HomeNav: React.FC = () => {
     return (
         <header className={classes.header}>
             <Container size="md" className={classes.inner}>
-                <Link href="/">
+                <Link href="/public">
                     <Title className={cabinet.className} size={rem(40)}>
                         Gatherly
                     </Title>

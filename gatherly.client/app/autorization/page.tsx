@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { readFromLocalStorage } from "@/lib/auth/headers/readFromLocalStorage";
 import getData from "@/lib/getData";
 import logoutUser from "@/lib/auth/logoutUser";
-import axiosInstance from "@/components/AxiosInstance";
-
-export default function TestLogin() {
+import axiosInstance from "@/lib/AxiosInstance";
+//page only for tests
+export default function AutorizationTestPage() {
     const [data, setData] = useState<string | null>(null);
     const [user, setUser] = useState<string | null>(null);
 

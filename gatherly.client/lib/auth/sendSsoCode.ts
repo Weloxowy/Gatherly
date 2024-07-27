@@ -1,4 +1,4 @@
-﻿import axiosInstance from "@/components/AxiosInstance";
+﻿import axiosInstance from "@/lib/AxiosInstance";
 
 async function sendSsoCode(email: string) {
     try {

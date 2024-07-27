@@ -1,31 +1,14 @@
 ﻿"use client"
-import {
-    TextInput,
-    Checkbox,
-    Anchor,
-    Paper,
-    Title,
-    Text,
-    Container,
-    Group,
-    Button, rem,
-} from '@mantine/core';
-import { useState } from "react";
+import {Anchor, Container, Paper, Text, Title} from '@mantine/core';
+import {useState} from "react";
 import LoginTraditional from "@/components/auth/LoginTraditional";
 import LoginByCode from "@/components/auth/LoginByCode";
 import Register from "@/components/auth/Register";
 import Recover from "@/components/auth/Recover";
-import GradientBackground from "@/components/app/GradientBackground";
-
-const options = {
-    loginTraditional: 'loginTraditional',
-    loginByCode: 'loginByCode',
-    register: 'register',
-    recover: 'recover'
-};
+import {authOptions} from "@/lib/interfaces/types";
 
 export default function Auth() {
-    const [authMethod, setAuthMethod] = useState(options.loginTraditional);
+    const [authMethod, setAuthMethod] = useState(authOptions.loginTraditional);
 
     return (
         <main>
@@ -35,45 +18,50 @@ export default function Auth() {
                         Witamy!
                     </Title>
                     <Text c="dimmed" size="md" ta="center" mt={5}>
-                        {authMethod === options.loginTraditional && (
+                        {authMethod === authOptions.loginTraditional && (
                             <>
-                            <>
-                                Wpisz poniżej adres mailowy aby się zalogować.
-                            </>
-                            <Anchor component="button" size="md" onClick={() => setAuthMethod(options.register)}>
-                                Nie posiadasz konta? Zarejestruj się
-                            </Anchor>
+                                <>
+                                    Wpisz poniżej adres mailowy aby się zalogować.
+                                </>
+                                <Anchor component="button" size="md"
+                                        onClick={() => setAuthMethod(authOptions.register)}>
+                                    Nie posiadasz konta? Zarejestruj się
+                                </Anchor>
                             </>
                         )
                         }
-                        {authMethod === options.loginByCode && (
-                        <>
+                        {authMethod === authOptions.loginByCode && (
                             <>
-                                Wpisz poniżej adres mailowy aby się zalogować poprzez usługę jednorazowego logowania.
+                                <>
+                                    Wpisz poniżej adres mailowy aby się zalogować poprzez usługę jednorazowego
+                                    logowania.
+                                </>
+                                <Anchor component="button" size="md"
+                                        onClick={() => setAuthMethod(authOptions.register)}>
+                                    Nie posiadasz konta? Zarejestruj się
+                                </Anchor>
                             </>
-                            <Anchor component="button" size="md" onClick={() => setAuthMethod(options.register)}>
-                                Nie posiadasz konta? Zarejestruj się
-                            </Anchor>
-                        </>
                         )
                         }
-                        {authMethod === options.register && (
+                        {authMethod === authOptions.register && (
                             <>
                                 <>
                                     Zarejestruj się aby móc korzystać z usług.
                                 </>
-                                <Anchor component="button" size="md" onClick={() => setAuthMethod(options.loginTraditional)}>
+                                <Anchor component="button" size="md"
+                                        onClick={() => setAuthMethod(authOptions.loginTraditional)}>
                                     Posiadasz już konto? Zaloguj się
                                 </Anchor>
                             </>
                         )
                         }
-                        {authMethod === options.recover && (
+                        {authMethod === authOptions.recover && (
                             <>
                                 <>
                                     Wpisz poniżej adres email aby zresetować hasło.
                                 </>
-                                <Anchor component="button" size="md" onClick={() => setAuthMethod(options.loginTraditional)}>
+                                <Anchor component="button" size="md"
+                                        onClick={() => setAuthMethod(authOptions.loginTraditional)}>
                                     Posiadasz już konto? Zaloguj się
                                 </Anchor>
                             </>
@@ -82,10 +70,14 @@ export default function Auth() {
                     </Text>
                 </Container>
                 <Paper withBorder shadow="md" p="lg" mt="xl" radius="md">
-                    {authMethod === options.loginTraditional && <LoginTraditional setAuthMethod={setAuthMethod} options={options} />}
-                    {authMethod === options.loginByCode && <LoginByCode setAuthMethod={setAuthMethod} options={options} />}
-                    {authMethod === options.register && <Register setAuthMethod={setAuthMethod} options={options} />}
-                    {authMethod === options.recover && <Recover setAuthMethod={setAuthMethod} options={options} />}
+                    {authMethod === authOptions.loginTraditional &&
+                        <LoginTraditional setAuthMethod={setAuthMethod} options={authOptions}/>}
+                    {authMethod === authOptions.loginByCode &&
+                        <LoginByCode setAuthMethod={setAuthMethod} options={authOptions}/>}
+                    {authMethod === authOptions.register &&
+                        <Register setAuthMethod={setAuthMethod} options={authOptions}/>}
+                    {authMethod === authOptions.recover &&
+                        <Recover setAuthMethod={setAuthMethod} options={authOptions}/>}
                 </Paper>
             </Container>
         </main>

@@ -1,0 +1,9 @@
+﻿.main{
+    padding: var(--mantine-spacing-lg);
+    padding-left: 4rem;
+    position: page;
+
+}
+.name{
+    padding-left: 1rem;
+}

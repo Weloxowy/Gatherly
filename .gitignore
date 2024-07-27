@@ -68,4 +68,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
+/.sonarqube
+/gatherly.server/.sonarqube
+gatherly.client/.scannerwork
+/.scannerwork
+/sonar-project.properties
+/gatherly.client/.scannerwork/

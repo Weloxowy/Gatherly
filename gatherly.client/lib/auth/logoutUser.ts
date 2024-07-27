@@ -1,5 +1,5 @@
-﻿import axiosInstance from "@/components/AxiosInstance";
-import { readFromLocalStorage } from "@/lib/auth/headers/readFromLocalStorage";
+﻿import axiosInstance from "@/lib/AxiosInstance";
+import {readFromLocalStorage} from "@/lib/auth/headers/readFromLocalStorage";
 
 async function logoutUser() {
     try {
@@ -8,21 +8,15 @@ async function logoutUser() {
             throw new Error("Authorization token not found");
         }
         const refreshToken = readFromLocalStorage("Refresh");
-        const response = await axiosInstance.post(
-            'auth/logout',
-            {},
-            {
-                headers: {
-                    'Authorization': authorizationToken,
-                    'Refresh': refreshToken
-                }
+        const response = await axiosInstance.post('auth/logout', {}, {
+            headers: {
+                'Authorization': authorizationToken, 'Refresh': refreshToken
             }
-        );
+        });
         localStorage.removeItem("Authorization");
         localStorage.removeItem("Refresh");
-        const responseData = response.data;
 
-        return responseData;
+        return response.data;
     } catch (error) {
         throw error;
     }

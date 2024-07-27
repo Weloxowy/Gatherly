@@ -1,6 +1,6 @@
 ﻿process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // ONLY FOR DEVELOPMENT!
 
-import { readFromLocalStorage } from "@/lib/auth/headers/readFromLocalStorage";
+import {readFromLocalStorage} from "@/lib/auth/headers/readFromLocalStorage";
 
 async function getData() {
     const token = readFromLocalStorage("Authorization");
@@ -9,12 +9,9 @@ async function getData() {
     }
 
     const res = await fetch('https://localhost:44329/api/auth/profile', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token
-        },
-        next: {
+        method: 'GET', headers: {
+            'Content-Type': 'application/json', 'Authorization': token
+        }, next: {
             revalidate: 60,
         }
     });

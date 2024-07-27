@@ -1,0 +1,71 @@
+﻿
+.title {
+    display: flex;
+    padding-left: 1rem;
+    align-items: center; /* Dodane aby ikonka i tytuł były w jednej linii */
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem; /* Dodano margin-bottom */
+    background: linear-gradient(to bottom, #ffffff 85%, transparent);
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 3; /* Aby była nad gradientami */
+}
+
+.list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 1rem; /* Dodaj padding, aby uniknąć problemów ze scrollbar */
+    margin-bottom: 3rem; /* Dodano margin-bottom aby zrobić miejsce na TextInput i Button */
+    scrollbar-width: auto; /* For Firefox */
+}
+
+.allmeetingslist {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 1rem; /* Dodaj padding, aby uniknąć problemów ze scrollbar */
+    scrollbar-width: auto; /* For Firefox */
+}
+
+.list::-webkit-scrollbar {
+    width: 8px; /* For Chrome, Safari, and Opera */
+}
+
+.list::-webkit-scrollbar-track {
+    background: transparent; /* Color of the scroll track */
+}
+
+.list::-webkit-scrollbar-thumb {
+    background-color: var(--mantine-color-dark-1); /* Color of the scroll thumb */
+    border-radius: 4px; /* Roundness of the scroll thumb */
+    border: 2px solid transparent; /* Creates padding around scroll thumb */
+}
+
+.reminder {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.inputGroup {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem; /* Dodano padding */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.input {
+    flex-grow: 1;
+    margin-right: 10px; /* Odstęp między inputem a buttonem */
+}
+
+.icon {
+    background-color: var(--mantine-primary-color-7);
+    border-radius: var(--mantine-spacing-xl);
+    padding: 8px; /* Dodano padding aby ikonka była bardziej widoczna */
+    margin-right: 10px; /* Dodano odstęp między ikoną a tekstem */
+}

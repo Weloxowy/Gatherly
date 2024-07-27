@@ -2,7 +2,6 @@
 import Image from "next/image";
 import "./style.css"
 import React from "react";
-import getData from "@/lib/getData";
 
 const Welcome: React.FC = () => {
 

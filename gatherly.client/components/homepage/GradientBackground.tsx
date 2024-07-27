@@ -1,10 +1,9 @@
 ﻿import React from 'react';
 
 const GradientBackground: React.FC = () => {
-    return (
-<>
-        <style>
-            {`
+    return (<>
+            <style>
+                {`
           .body {
             position: absolute;
             top: 0;
@@ -21,11 +20,9 @@ const GradientBackground: React.FC = () => {
             z-index: -1;
           }
         `}
-        </style>
-    <div className="body" />
-</>
-)
-    ;
+            </style>
+            <div className="body"/>
+        </>);
 };
 
 export default GradientBackground;

@@ -1,18 +1,13 @@
-﻿import axiosInstance from '@/components/AxiosInstance';
+﻿import axiosInstance from '@/lib/AxiosInstance';
 import saveTokenToLocalStorage from '@/lib/auth/headers/saveToLocalStorage';
-import {isEmail} from "@mantine/form";
+import {AuthReturn} from "@/lib/interfaces/types";
 
-async function RegisterUser(name : string, email:string, password:string) {
+async function RegisterUser(name: string, email: string, password: string) {
 
     try {
-        const response = await axiosInstance.post(
-            'auth/register',
-            {
-                name: name,
-                email: email,
-                password: password
-            }
-        );
+        const response = await axiosInstance.post('auth/register', {
+            name: name, email: email, password: password
+        });
 
         const responseData: AuthReturn = response.data;
         saveTokenToLocalStorage("Authorization", "Bearer " + responseData.jwt);

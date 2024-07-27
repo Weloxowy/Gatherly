@@ -7,6 +7,7 @@
     text-wrap: balance;
   }
 }
+
 :root {
-  --font-satoshi: 'Satoshi', sans-serif; /* Upewnij się, że ta linia jest zgodna z konfiguracją czcionki */
+  --font-satoshi: 'Satoshi', sans-serif;
 }
