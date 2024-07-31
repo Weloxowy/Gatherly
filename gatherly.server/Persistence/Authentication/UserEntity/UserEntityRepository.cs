@@ -270,4 +270,25 @@ public class UserEntityRepository : IUserEntityRepository
 
         return true;
     }
+
+    public Models.Authentication.UserEntity.UserEntity? ChangeUserPassword(UserEntityDTOResetPassword data)
+    {
+        using (var session = _sessionFactory.OpenSession())
+        {
+            using (var transaction = session.BeginTransaction())
+            {
+                var user = session.Query<Models.Authentication.UserEntity.UserEntity>()
+                    .SingleOrDefault(x => x.Email == data.Email);
+
+                if (user == null) return null;
+                
+                user.PasswordHash = HashingPassword(data.NewPassword);
+                session.Update(user);
+                transaction.Commit();
+                return user;
+
+            }
+        }
+    }
+
 }

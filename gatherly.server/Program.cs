@@ -3,13 +3,18 @@ using System.Text;
 using DotNetEnv;
 using FluentMigrator.Runner;
 using gatherly.server;
+using gatherly.server.Models.Authentication.RecoverySession;
 using gatherly.server.Models.Authentication.SsoSession;
 using gatherly.server.Models.Authentication.UserEntity;
+using gatherly.server.Models.Mailing.MailEntity;
 using gatherly.server.Models.Tokens.BlacklistToken;
 using gatherly.server.Models.Tokens.RefreshToken;
 using gatherly.server.Models.Tokens.TokenEntity;
+using gatherly.server.Persistence.Authentication.RecoverySession;
 using gatherly.server.Persistence.Authentication.SsoSession;
 using gatherly.server.Persistence.Authentication.UserEntity;
+using gatherly.server.Persistence.Mailing;
+using gatherly.server.Persistence.Mailing.EmailTemplates;
 using gatherly.server.Persistence.Tokens.BlacklistToken;
 using gatherly.server.Persistence.Tokens.RefreshToken;
 using gatherly.server.Persistence.Tokens.TokenEntity;
@@ -31,6 +36,9 @@ builder.Services.AddScoped<ITokenEntityService, TokenEntityService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IBlacklistTokenService, BlacklistTokenService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IMailEntityService, MailEntityService>();
+builder.Services.AddScoped<IMailEntityRepository, MailEntityRepository>();
+builder.Services.AddScoped<IRecoverySessionService, RecoverySessionService>();
 
 // Add controllers and endpoints
 builder.Services.AddControllers();
@@ -132,6 +140,13 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+//email sending
+
+builder.Services
+    .AddFluentEmail(Env.GetString("MAIL_LOGIN"))
+    .AddRazorRenderer()
+    .AddSmtpSender(Env.GetString("SMTP_ADDRESS"), Env.GetInt("PORT_NUMBER"),
+        Env.GetString("MAIL_LOGIN"), Env.GetString("MAIL_PASSWORD"));
 
 builder.Services.AddAuthorization();
 

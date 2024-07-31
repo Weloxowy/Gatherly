@@ -46,4 +46,9 @@ public class UserEntityService : IUserEntityService
     {
         return _userEntityRepository.VerifyUser(data);
     }
+
+    public Models.Authentication.UserEntity.UserEntity? ChangeUserPassword(UserEntityDTOResetPassword data)
+    {
+        return _userEntityRepository.ChangeUserPassword(data);
+    }
 }

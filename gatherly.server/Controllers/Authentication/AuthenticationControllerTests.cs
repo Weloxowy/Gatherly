@@ -1,6 +1,8 @@
 ﻿using gatherly.server.Entities.Authentication;
+using gatherly.server.Models.Authentication.RecoverySession;
 using gatherly.server.Models.Authentication.SsoSession;
 using gatherly.server.Models.Authentication.UserEntity;
+using gatherly.server.Models.Mailing.MailEntity;
 using gatherly.server.Models.Tokens.BlacklistToken;
 using gatherly.server.Models.Tokens.RefreshToken;
 using gatherly.server.Models.Tokens.TokenEntity;
@@ -17,6 +19,8 @@ public class AuthenticationControllerTests
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock;
     private readonly Mock<ISsoSessionService> _ssoSessionServiceMock;
     private readonly Mock<ITokenEntityService> _tokenEntityServiceMock;
+    private readonly Mock<IMailEntityService> _mailEntityServiceMock;
+    private readonly Mock<IRecoverySessionService> _recoverySessionServiceMock;
 
     private readonly Mock<IUserEntityService> _userServiceMock;
 
@@ -32,13 +36,17 @@ public class AuthenticationControllerTests
         _tokenEntityServiceMock = new Mock<ITokenEntityService>();
         _refreshTokenServiceMock = new Mock<IRefreshTokenService>();
         _blacklistTokenServiceMock = new Mock<IBlacklistTokenService>();
+        _mailEntityServiceMock = new Mock<IMailEntityService>();
+        _recoverySessionServiceMock = new Mock<IRecoverySessionService>();
 
         _controller = new AuthenticationController(
             _userServiceMock.Object,
             _ssoSessionServiceMock.Object,
             _tokenEntityServiceMock.Object,
             _refreshTokenServiceMock.Object,
-            _blacklistTokenServiceMock.Object
+            _blacklistTokenServiceMock.Object,
+            _mailEntityServiceMock.Object,
+            _recoverySessionServiceMock.Object
         );
     }
 

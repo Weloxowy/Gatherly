@@ -74,7 +74,10 @@ public class BlacklistTokenRepository : IBlacklistTokenRepository
         using (var session = _sessionFactory.OpenSession())
         {
             var blacklistToken = session.Get<Models.Tokens.BlacklistToken.BlacklistToken>(token);
-            if (blacklistToken == null) return true;
+            if (blacklistToken != null)
+            {
+                return true;
+            }
         }
 
         return false;

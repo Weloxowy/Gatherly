@@ -1,7 +1,8 @@
 ﻿'use client';
 import React, {useEffect, useState} from 'react';
 import {useParams} from 'next/navigation';
-import {ExtendedMeeting, getExtendedMeetingById} from '@/lib/meetingDetails/meetingDetails';
+import {getExtendedMeetingById} from '@/lib/meetingDetails/meetingDetails';
+import {ExtendedMeeting} from '@/lib/interfaces/types';
 import classes from "@/app/(dashboard)/meeting/[id]/MeetingComponent.module.css";
 import {Container, Grid, Paper, rem, SimpleGrid, Title} from "@mantine/core";
 import MeetingDetails from "@/components/dashboard/MeetingDetails/MeetingDetails";

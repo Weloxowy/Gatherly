@@ -12,4 +12,5 @@ public interface IUserEntityRepository
     public bool DeleteUserInfo(string email);
     public UserEntity? CreateNewUser(UserEntityDTOCreate newData);
     public UserEntity? VerifyUser(UserEntityDTOLoginPassword data);
+    public UserEntity? ChangeUserPassword(UserEntityDTOResetPassword data);
 }

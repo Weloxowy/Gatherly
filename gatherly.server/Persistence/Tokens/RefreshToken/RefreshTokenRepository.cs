@@ -51,9 +51,10 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     {
         using (var session = _sessionFactory.OpenSession())
         {
-            return await session.Query<Models.Tokens.RefreshToken.RefreshToken>()
-                .Where(rt => rt.Token == token && !rt.IsRevoked)
-                .SingleOrDefaultAsync();
+            var refreshTokens = await session.Query<Models.Tokens.RefreshToken.RefreshToken>()
+                .Where(rt => rt.Token == token && rt.IsRevoked == false)
+                .ToListAsync();
+            return refreshTokens.Count == 0 ? null : refreshTokens[0];
         }
     }
 

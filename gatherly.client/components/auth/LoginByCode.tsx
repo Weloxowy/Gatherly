@@ -12,7 +12,7 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
         initialValues: {
             email: '',
         }, validate: {
-            //email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'), //TODO: odkomentować
+            email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'),
         },
     });
 
@@ -27,7 +27,6 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
     const handleSubmitForm1 = async (values: { email: string }) => {
         try {
             const res = await sendSsoCode(values.email);
-            console.log(res); // Przy działającym mailu zakomentować
             setEmail(values.email);
             setStep(2);
         } catch (error: any) {

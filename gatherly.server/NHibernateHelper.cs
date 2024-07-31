@@ -1,5 +1,6 @@
 ﻿using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
+using gatherly.server.Models.Authentication.RecoverySession;
 using gatherly.server.Models.Authentication.SsoSession;
 using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Tokens.BlacklistToken;
@@ -32,6 +33,8 @@ public class NHibernateHelper
                         m.FluentMappings.AddFromAssemblyOf<RefreshToken>())
                     .Mappings(m =>
                         m.FluentMappings.AddFromAssemblyOf<BlacklistToken>())
+                    .Mappings(m =>
+                        m.FluentMappings.AddFromAssemblyOf<RecoverySession>())
                     /*
                     .Mappings(m =>
                         m.FluentMappings.AddFromAssemblyOf<Models.Mailing.MailEntity.MailEntity>())

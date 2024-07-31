@@ -94,7 +94,7 @@ public class TokensController : ControllerBase
             if (string.IsNullOrEmpty(jti)) return BadRequest("JWT ID (jti) not found in the token.");
 
             var isBlacklisted = _blacklistTokenService.IsTokenBlacklisted(jti);
-            if (isBlacklisted != null) return Unauthorized("The token has been blacklisted.");
+            if (isBlacklisted) return Unauthorized("The token has been blacklisted.");
 
             var expiration = jsonToken.ValidTo;
             if (expiration <= DateTime.UtcNow) return Unauthorized("The JWT has expired.");
@@ -130,12 +130,12 @@ public class TokensController : ControllerBase
         try
         {
             var isBlacklisted = _blacklistTokenService.IsTokenBlacklisted(authorizationHeader);
-            if (isBlacklisted != null) return Unauthorized("The token has been blacklisted.");
-
-            var refreshToken = _refreshTokenService.GetRefreshToken(authorizationHeader);
-            if (refreshToken == null || refreshToken.Result.IsRevoked)
+            if (isBlacklisted) return Unauthorized("The token has been blacklisted.");
+            //problem z async
+            var refreshToken =  _refreshTokenService.GetRefreshToken(authorizationHeader);
+            if (refreshToken == null)
                 return BadRequest("The refresh token was not found or is inactive. Check the token status.");
-
+        
             return Ok($"The token is valid until {refreshToken.Result.Expiration}");
         }
         catch (SecurityTokenException ex)

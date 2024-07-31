@@ -4,8 +4,7 @@ namespace gatherly.server.Persistence.Authentication.SsoSession;
 
 public class SsoSessionService : ISsoSessionService
 {
-    private readonly ISsoSessionRepository _ssoSessionRepository =
-        new SsoSessionRepository(NHibernateHelper.SessionFactory);
+    private readonly SsoSessionRepository _ssoSessionRepository = new(NHibernateHelper.SessionFactory);
 
 
     public Models.Authentication.SsoSession.SsoSession CreateSso(Guid userId, string email)

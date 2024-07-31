@@ -44,8 +44,8 @@ const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                     <Anchor component="button" size="md" onClick={() => setAuthMethod(options.loginByCode)}>
                         Logowanie jednorazowe
                     </Anchor>
-                    <Anchor component="button" size="md" onClick={() => setAuthMethod(options.register)}>
-                        Zarejestruj się
+                    <Anchor component="button" size="md" onClick={() => setAuthMethod(options.recover)}>
+                        Odzyskaj konto
                     </Anchor>
                 </Group>
                 <Button fullWidth mt="lg" type="submit">

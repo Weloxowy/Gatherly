@@ -33,6 +33,29 @@ export default function AutorizationTestPage() {
         }
     };
 
+    const handleGetInfo = async () => {
+        try {
+            const authorizationToken = readFromLocalStorage("Authorization");
+            const refreshToken = readFromLocalStorage("Refresh");
+            console.log(refreshToken);
+            if (!authorizationToken || !refreshToken) {
+                throw new Error("Authorization or refresh token not found");
+            }
+            const response = await axiosInstance.get(
+                'auth/profile',
+                {
+                    headers: {
+                        'Authorization': authorizationToken,
+                        'Refresh': refreshToken
+                    }
+                }
+            );
+            console.log('Get user info response:', response);
+        } catch (error) {
+            console.error('Get user info failed:', error);
+        }
+    };
+
     const handleRefreshValidation = async () => {
         try {
             const authorizationToken = readFromLocalStorage("Authorization");
@@ -104,6 +127,9 @@ export default function AutorizationTestPage() {
                     </Button>
                     <Button onClick={handleJwtValidation}>
                         Walidacja jwt
+                    </Button>
+                    <Button onClick={handleGetInfo}>
+                        GET info
                     </Button>
                 </Container>
             </Container>
