@@ -1,6 +1,6 @@
-﻿using FluentNHibernate.Conventions;
+﻿using System.IdentityModel.Tokens.Jwt;
+using FluentNHibernate.Conventions;
 using gatherly.server.Entities.Authentication;
-using gatherly.server.Entities.Tokens;
 using gatherly.server.Models.Authentication.RecoverySession;
 using gatherly.server.Models.Authentication.SsoSession;
 using gatherly.server.Models.Authentication.UserEntity;
@@ -21,12 +21,12 @@ namespace gatherly.server.Controllers.Authentication;
 public class AuthenticationController : ControllerBase
 {
     private readonly IBlacklistTokenService _blacklistTokenService;
+    private readonly IMailEntityService _mailEntityService;
+    private readonly IRecoverySessionService _recoverySessionService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ISsoSessionService _ssoSessionService;
     private readonly ITokenEntityService _tokenEntityService;
     private readonly IUserEntityService _userService;
-    private readonly IMailEntityService _mailEntityService;
-    private readonly IRecoverySessionService _recoverySessionService;
 
     // <summary>
     /// Constructor for AuthenticationController.
@@ -40,7 +40,7 @@ public class AuthenticationController : ControllerBase
     /// <param name="recoverySessionService">Service for account recovery operations.</param>
     public AuthenticationController(IUserEntityService userService, ISsoSessionService ssoSessionService,
         ITokenEntityService tokenEntityService, IRefreshTokenService refreshTokenService,
-        IBlacklistTokenService blacklistTokenService, IMailEntityService mailEntityService, 
+        IBlacklistTokenService blacklistTokenService, IMailEntityService mailEntityService,
         IRecoverySessionService recoverySessionService)
     {
         _userService = userService;
@@ -74,20 +74,16 @@ public class AuthenticationController : ControllerBase
         try
         {
             var ssoCode = _ssoSessionService.CreateSso(user.Id, email);
-            if (ssoCode == null)
-            {
-                return NotFound("User profile not found");
-            }
+            if (ssoCode == null) return NotFound("User profile not found");
             _mailEntityService.SendSsoCodeEmailAsync(user, ssoCode);
             return Ok("Email was send");
         }
-        catch(Exception exception)
+        catch (Exception exception)
         {
             return StatusCode(500, exception.Message);
             //return StatusCode(500, "There was a problem while creating a SSO token. Please try again later");
         }
     }
-
 
     /// <summary>
     ///     Verifies the single sign-on (SSO) verification code and authenticates the user.
@@ -115,10 +111,26 @@ public class AuthenticationController : ControllerBase
             var refresh = _refreshTokenService.GenerateRefreshToken(user.Id);
             var jwt = _tokenEntityService.GenerateToken(user, refresh.Id.ToString());
 
-            Response.Headers.Append("Authorization", $"Bearer {jwt}");
-            Response.Headers.Append("RefreshToken", refresh.Token);
+            var jwtCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            };
 
-            return Ok(new TokensDTOResponse(jwt, refresh.Token));
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(1) // Czas ważności refresh tokenu
+            };
+
+            Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
+            Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
+
+            return Ok("Login successfully");
         }
         catch
         {
@@ -149,10 +161,26 @@ public class AuthenticationController : ControllerBase
             var refresh = _refreshTokenService.GenerateRefreshToken(user.Id);
             var jwt = _tokenEntityService.GenerateToken(user, refresh.Id.ToString());
 
-            Response.Headers.Append("Authorization", $"Bearer {jwt}");
-            Response.Headers.Append("RefreshToken", refresh.Token);
+            var jwtCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            };
 
-            return Ok(new TokensDTOResponse(jwt, refresh.Token));
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(1)
+            };
+
+            Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
+            Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
+
+            return Ok("Login successfully");
         }
         catch
         {
@@ -160,8 +188,8 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    // <summary>
-    /// Registers a new user.
+    /// <summary>
+    ///     Registers a new user.
     /// </summary>
     /// <remarks>
     ///     This endpoint creates a new user based on the provided registration data and provides authentication tokens upon
@@ -185,46 +213,58 @@ public class AuthenticationController : ControllerBase
         var refresh = _refreshTokenService.GenerateRefreshToken(newUser.Id);
         var jwt = _tokenEntityService.GenerateToken(newUser, refresh.Id.ToString());
 
-        Response.Headers.Append("Authorization", $"Bearer {jwt}");
-        Response.Headers.Append("RefreshToken", refresh.Token);
+        var jwtCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddMinutes(15)
+        };
 
-        return Ok(new TokensDTOResponse(jwt, refresh.Token));
+        var refreshCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddHours(1)
+        };
+
+        Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
+        Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
+
+        return Ok("Login successfully");
     }
 
 
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        var mail = _tokenEntityService.GetEmailFromRequestHeader(HttpContext);
-        if (mail.IsEmpty()) return Unauthorized("User profile not found"); //TODO: sprawdzic działanie
+        var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
+        if (mail.IsEmpty()) return Unauthorized("User profile not found");
         var user = _userService.GetUserInfo(mail);
         if (user == null) return NotFound("User profile not found");
 
-        var authorizationHeader = HttpContext.Request.Headers["Authorization"].FirstOrDefault();
-        if (authorizationHeader == null || !authorizationHeader.StartsWith("Bearer ")) return Unauthorized("a2");
+        var authorizationHeader = HttpContext.Request.Cookies["Authorization"];
+        if (authorizationHeader == null || !authorizationHeader.StartsWith("Bearer "))
+        {
+            Response.Cookies.Delete("Authorization");
+        }
 
-        var jwtToken = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-        var refreshTokenHeader = HttpContext.Request.Headers["Refresh"].FirstOrDefault();
-        if (refreshTokenHeader == null) return Unauthorized("a3");
-
-        var refreshToken = refreshTokenHeader.Trim();
-
-        _blacklistTokenService.AddToBlacklist(jwtToken, user.Id, DateTime.Now.AddHours(2));
-        _blacklistTokenService.AddToBlacklist(refreshToken, user.Id, DateTime.Now.AddHours(2));
-
-        _refreshTokenService.RevokeRefreshToken(refreshToken);
-        _refreshTokenService.RevokeRefreshToken(jwtToken);
-
-        Response.Headers.Remove("Authorization");
-        Response.Headers.Remove("RefreshToken");
-
+        var refreshTokenHeader = HttpContext.Request.Cookies["RefreshToken"];
+        if (refreshTokenHeader == null)
+        {
+            var refreshToken = refreshTokenHeader.Trim();
+            _blacklistTokenService.AddToBlacklist(refreshToken, user.Id, DateTime.Now.AddHours(2));
+            _refreshTokenService.RevokeRefreshToken(refreshToken);
+            Response.Cookies.Delete("RefreshToken");
+        }
+        
         return Ok("User logged out successfully.");
     }
-    
+
     //reset - not tested
-    
-     /// <summary>
+
+    /// <summary>
     ///     Sends a request to user mail to reset password.
     /// </summary>
     /// <remarks>
@@ -246,16 +286,14 @@ public class AuthenticationController : ControllerBase
         {
             var session = _recoverySessionService.CreateSession(user.Id, email);
             if (session == null)
-            {
                 return NotFound("There was a problem while creating a recovery link. Please try again later");
-            }
             _mailEntityService.SendRecoveryEmailAsync(user, session);
             return Ok("Email was send succesfully");
         }
-        catch(Exception exception)
+        catch (Exception exception)
         {
-            return StatusCode(500, exception.Message);
-            //return StatusCode(500, "There was a problem while creating a recovery link. Please try again later");
+            //return StatusCode(500, exception.Message);
+            return StatusCode(500, "There was a problem while creating a recovery link. Please try again later");
         }
     }
 
@@ -305,9 +343,11 @@ public class AuthenticationController : ControllerBase
         {
             var session = _recoverySessionService.CloseRecoverySession(data.Email);
             if (session == false) return NotFound("Active recovery session not found");
-            
+
             var changePassword = _userService.ChangeUserPassword(data);
-            return changePassword == null ? StatusCode(500, "There was a problem while recovering your account. Please try again later") : Ok("Recovery was successful");
+            return changePassword == null
+                ? StatusCode(500, "There was a problem while recovering your account. Please try again later")
+                : Ok("Recovery was successful");
         }
         catch
         {

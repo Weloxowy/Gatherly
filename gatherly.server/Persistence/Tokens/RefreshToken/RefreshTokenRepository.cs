@@ -47,17 +47,28 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     /// </summary>
     /// <param name="token">The refresh token string.</param>
     /// <returns>The refresh token if found and not revoked; otherwise, null.</returns>
-    public async Task<Models.Tokens.RefreshToken.RefreshToken?> GetRefreshToken(string token)
+    public Models.Tokens.RefreshToken.RefreshToken? GetRefreshToken(string token)
     {
-        using (var session = _sessionFactory.OpenSession())
+        try
         {
-            var refreshTokens = await session.Query<Models.Tokens.RefreshToken.RefreshToken>()
-                .Where(rt => rt.Token == token && rt.IsRevoked == false)
-                .ToListAsync();
-            return refreshTokens.Count == 0 ? null : refreshTokens[0];
+            using (var session = _sessionFactory.OpenSession())
+            {
+                var refreshTokens = session.Query<Models.Tokens.RefreshToken.RefreshToken>()
+                    .Where(rt => rt.Token == token && rt.IsRevoked == false)
+                    .ToList(); // Synchroniczne pobieranie danych
+
+                return refreshTokens.Count == 0 ? null : refreshTokens[0];
+            }
+        }
+        catch (Exception ex)
+        {
+            // Zaloguj błąd
+            Console.WriteLine($"Error retrieving refresh token: {ex.Message}");
+            throw; // Opcjonalnie: ponownie rzuć wyjątek lub zwróć null
         }
     }
-
+    
+    
     /// <summary>
     ///     Revokes a refresh token.
     /// </summary>

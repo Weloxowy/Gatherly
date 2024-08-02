@@ -8,16 +8,16 @@ const axiosInstance = axios.create({
 
 // Interceptor
 axiosInstance.interceptors.response.use((response: AxiosResponse) => {
-    console.log('Response received:', response);
+    //console.log('Response received:', response);
     return response;
 }, (error: AxiosError) => {
     if (error.response) {
-        console.error('Error response received:', error.response);
+        //console.error('Error response received:', error.response);
         return Promise.reject({
             data: error.response.data, status: error.response.status, code: error.response.status
         });
     } else {
-        console.error('Network or other error:', error.message);
+        //console.error('Network or other error:', error.message);
         return Promise.reject({
             data: error.message, status: 500, code: 500
         });

@@ -56,7 +56,6 @@
         <Folder Include="Persistence\Authorization\" />
         <Folder Include="Persistence\Tokens\BlacklistToken\_test\" />
         <Folder Include="Persistence\Tokens\RefreshToken\_test\" />
-        <Folder Include="Persistence\Tokens\TokenEntity\_test\" />
     </ItemGroup>
 
 </Project>

@@ -18,8 +18,10 @@ public class TokenEntityService : ITokenEntityService
         return _tokenEntityRepository.ValidateToken(token);
     }
 
-    public string GetEmailFromRequestHeader(HttpContext httpContext)
+   
+    public string GetEmailFromRequestCookie(HttpContext httpContext)
     {
-        return _tokenEntityRepository.GetEmailFromRequestHeader(httpContext);
+        return _tokenEntityRepository.GetEmailFromRequestCookie(httpContext);
     }
+    
 }

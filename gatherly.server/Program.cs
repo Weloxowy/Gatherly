@@ -198,6 +198,16 @@ else
     throw new Exception("Migration fault");
 }
 
+app.Use(async (context, next) =>
+{
+    var token = context.Request.Cookies["Authorization"];
+    if (!string.IsNullOrEmpty(token) && token.StartsWith("Bearer "))
+    {
+        context.Request.Headers["Authorization"] = token;
+    }
+    await next();
+});
+
 app.UseCors("AllowSpecificOrigin");
 app.UseDefaultFiles();
 app.UseStaticFiles();

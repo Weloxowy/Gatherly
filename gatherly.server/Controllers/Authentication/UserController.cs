@@ -49,7 +49,7 @@ public class UserController : ControllerBase
     [HttpGet("profile")]
     public async Task<ActionResult<UserEntity>> GetLoggedInUserProfile()
     {
-        var mail = _tokenEntityService.GetEmailFromRequestHeader(HttpContext);
+        var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have no access to this resource");
 
         var user = _userService.GetUserInfo(mail);
@@ -73,7 +73,7 @@ public class UserController : ControllerBase
     [HttpPatch("profile")]
     public async Task<ActionResult<UserEntity>> UpdateLoggedInUserProfile([FromBody] UserEntityDTOUpdate newData)
     {
-        var mail = _tokenEntityService.GetEmailFromRequestHeader(HttpContext);
+        var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have no access to this resource");
 
         var user = _userService.PatchUserInfo(newData, mail);
@@ -105,7 +105,7 @@ public class UserController : ControllerBase
     [HttpDelete("profile")]
     public ActionResult<UserEntity> DeleteUser()
     {
-        var mail = _tokenEntityService.GetEmailFromRequestHeader(HttpContext);
+        var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have no access to this resource");
 
         var result = _userService.DeleteUserInfo(mail);
@@ -133,7 +133,7 @@ public class UserController : ControllerBase
     [HttpGet("profile/{id}")]
     public ActionResult<UserEntity> GetUserById(Guid id)
     {
-        var mail = _tokenEntityService.GetEmailFromRequestHeader(HttpContext);
+        var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have an invalid access token");
 
         var isAdmin = _userService.IsUserAdmin(mail);
@@ -163,7 +163,7 @@ public class UserController : ControllerBase
     [HttpPatch("profile/{id}")]
     public ActionResult<UserEntity> PatchUserById([FromBody] UserEntityDTOUpdate newData, Guid id)
     {
-        var mail = _tokenEntityService.GetEmailFromRequestHeader(HttpContext);
+        var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have an invalid token");
 
         var isAdmin = _userService.IsUserAdmin(mail);
@@ -195,7 +195,7 @@ public class UserController : ControllerBase
     [HttpDelete("profile/{id}")]
     public ActionResult<UserEntity> DeleteExistingUser(string id)
     {
-        var mail = _tokenEntityService.GetEmailFromRequestHeader(HttpContext);
+        var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have an invalid token");
 
         var isAdmin = _userService.IsUserAdmin(mail);

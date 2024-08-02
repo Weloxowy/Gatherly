@@ -5,7 +5,6 @@ using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Tokens.BlacklistToken;
 using gatherly.server.Models.Tokens.RefreshToken;
 using gatherly.server.Models.Tokens.TokenEntity;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
@@ -30,30 +29,68 @@ public class TokensController : ControllerBase
     }
 
     /// <summary>
-    ///     Issues a new JWT.
+    ///     Issues a new JWT and Refresh tokens.
     /// </summary>
-    /// <param name="request">The refresh request containing the refresh token.</param>
     /// <returns>Returns a new JWT if the refresh token is valid; otherwise, returns Unauthorized.</returns>
     /// <response code="200">Returns the authentication tokens.</response>
     /// <response code="401">Incorrect credentials or expired token.</response>
     /// <response code="404">Incorrect credentials.</response>
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+    public async Task<IActionResult> RefreshTokens()
     {
-        using (var session = NHibernateHelper.OpenSession())
+        var refreshToken = Request.Cookies["RefreshToken"];
+        if (string.IsNullOrEmpty(refreshToken))
+            return BadRequest("Refresh Token is not present in the request cookies.");
+        refreshToken = refreshToken.Trim();
+
+        try
         {
-            var refresh = await _refreshTokenService.GetRefreshToken(request.RefreshToken);
+            var isBlacklisted = _blacklistTokenService.IsTokenBlacklisted(refreshToken);
+            if (isBlacklisted) return Unauthorized("The token has been blacklisted.");
 
-            if (refresh == null || refresh.Expiration <= DateTime.Now) return Unauthorized();
+            var oldRefreshToken = _refreshTokenService.GetRefreshToken(refreshToken);
+            if (oldRefreshToken == null)
+                return BadRequest("The refresh token was not found or is inactive. Check the token status.");
 
-            var user = _userEntityService.GetUserInfo(refresh.UserId);
-            if (user == null) return NotFound("Incorect user data");
+            var userId = oldRefreshToken.UserId;
+            var userEntity = _userEntityService.GetUserInfo(userId);
+            if (userEntity == null) return NotFound("User not found.");
 
-            var token = _tokenEntityService.GenerateToken(user, refresh.Id.ToString());
+            var newRefreshToken = _refreshTokenService.GenerateRefreshToken(userId);
+            var newJwtToken = _tokenEntityService.GenerateToken(userEntity, newRefreshToken.Id.ToString());
 
-            return Ok(new { token });
+            var jwtCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            };
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(1)
+            };
+
+            Response.Cookies.Append("Authorization", "Bearer " + newJwtToken, jwtCookieOptions);
+            Response.Cookies.Append("RefreshToken", newRefreshToken.Token, refreshCookieOptions);
+
+            return Ok("The tokens are refreshed");
+        }
+        catch (SecurityTokenException ex)
+        {
+            return Unauthorized("The refresh token is invalid or expired: " + ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                "An error occurred while validating the refresh token: " + ex.Message);
         }
     }
+
 
     /// <summary>
     ///     Validates a JWT.
@@ -66,7 +103,7 @@ public class TokensController : ControllerBase
     [HttpPost("jwt/validate")]
     public async Task<IActionResult> ValidateJwtToken()
     {
-        var authorizationHeader = Request.Headers["Authorization"].FirstOrDefault();
+        var authorizationHeader = Request.Cookies["Authorization"];
         if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             return BadRequest("JWT Token is not present in the request header.");
 
@@ -123,20 +160,20 @@ public class TokensController : ControllerBase
     [HttpPost("refresh/validate")]
     public async Task<IActionResult> ValidateRefreshToken()
     {
-        var authorizationHeader = Request.Headers["Refresh"].FirstOrDefault().Trim();
+        var authorizationHeader = Request.Cookies["RefreshToken"];
         if (string.IsNullOrEmpty(authorizationHeader))
             return BadRequest("Refresh Token is not present in the request header.");
-
+        authorizationHeader = authorizationHeader.Trim();
         try
         {
             var isBlacklisted = _blacklistTokenService.IsTokenBlacklisted(authorizationHeader);
             if (isBlacklisted) return Unauthorized("The token has been blacklisted.");
             //problem z async
-            var refreshToken =  _refreshTokenService.GetRefreshToken(authorizationHeader);
+            var refreshToken = _refreshTokenService.GetRefreshToken(authorizationHeader);
             if (refreshToken == null)
                 return BadRequest("The refresh token was not found or is inactive. Check the token status.");
-        
-            return Ok($"The token is valid until {refreshToken.Result.Expiration}");
+
+            return Ok($"The token is valid until {refreshToken.Expiration}");
         }
         catch (SecurityTokenException ex)
         {
@@ -160,28 +197,71 @@ public class TokensController : ControllerBase
     [HttpPost("revoke")]
     public async Task<IActionResult> RevokeToken()
     {
-        var authorizationHeader = Request.Headers["Authorization"].FirstOrDefault();
-        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-            return BadRequest("JWT Token is not present in the request header.");
+        var authToken = Request.Cookies["Authorization"];
+        var refreshToken = Request.Cookies["RefreshToken"];
+        
+        if (string.IsNullOrEmpty(authToken) && string.IsNullOrEmpty(refreshToken))
+            return BadRequest("JWT and Refresh Tokens are not present in the request cookies.");
 
-        var jwtToken = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-        try
+        if (!string.IsNullOrEmpty(authToken) && authToken.StartsWith("Bearer "))
         {
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
+            var jwtToken = authToken.Substring("Bearer ".Length).Trim();
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
 
-            var jti = jsonToken.Claims.FirstOrDefault(claim => claim.Type == JwtRegisteredClaimNames.Jti)?.Value;
-            if (string.IsNullOrEmpty(jti)) return BadRequest("Cannot extract JWT ID (jti) from the token.");
+                var userEmail = jsonToken.Subject;
+                if (userEmail.IsNullOrEmpty())
+                    return BadRequest("User id is incorrect. Check if the account wasnt deleted");
+                
+                var user = _userEntityService.GetUserInfo(userEmail);
+                
+                var jti = jsonToken.Claims.FirstOrDefault(claim => claim.Type == JwtRegisteredClaimNames.Jti)?.Value;
+                
+                if (string.IsNullOrEmpty(jti))
+                    return BadRequest("Cannot extract JWT ID (jti) from the token.");
+                
+                await _refreshTokenService.RevokeRefreshToken(jti);
+                
+                _blacklistTokenService.AddToBlacklist(jwtToken, user.Id, DateTime.Now.AddHours(2));
+                _blacklistTokenService.AddToBlacklist(jti, user.Id, DateTime.Now.AddHours(2));
+                
+                Response.Cookies.Delete("Authorization");
+                Response.Cookies.Delete("RefreshToken");
 
-            await _refreshTokenService.RevokeRefreshToken(jti);
-
-            return Ok();
+                return Ok("Tokens revoked successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "An error occurred while revoking the JWT: " + ex.Message);
+            }
         }
-        catch (Exception ex)
+
+        if (!string.IsNullOrEmpty(refreshToken))
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                "An error occurred while revoking the JWT: " + ex.Message);
+            try
+            {
+                var oldRefreshToken = _refreshTokenService.GetRefreshToken(refreshToken);
+                if (oldRefreshToken == null)
+                    return BadRequest("The refresh token was not found or is inactive. Check the token status.");
+
+                var userId = oldRefreshToken.UserId;
+                await _refreshTokenService.RevokeRefreshToken(refreshToken);
+                _blacklistTokenService.AddToBlacklist(refreshToken, userId, DateTime.Now.AddHours(2));
+
+                Response.Cookies.Delete("Authorization");
+                Response.Cookies.Delete("RefreshToken");
+
+                return Ok("Tokens revoked successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "An error occurred while revoking the refresh token: " + ex.Message);
+            }
         }
+        return BadRequest("JWT and Refresh Tokens are not present in the request cookies.");
     }
 }

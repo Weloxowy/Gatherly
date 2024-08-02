@@ -79,25 +79,23 @@ public class TokenEntityRepository : ITokenEntityRepository
     }
 
     /// <summary>
-    ///     Extracts the email from the JWT token present in the request header.
+    ///     Extracts the email from the JWT token present in the cookies.
     /// </summary>
-    /// <param name="httpContext">The HTTP context containing the request header.</param>
+    /// <param name="httpContext">The HTTP context containing the request cookies.</param>
     /// <returns>The email extracted from the token if valid; otherwise, null.</returns>
-    public string GetEmailFromRequestHeader(HttpContext httpContext)
+    public string GetEmailFromRequestCookie(HttpContext httpContext)
     {
-        var authorizationHeader = httpContext.Request.Headers["Authorization"].FirstOrDefault();
-        if (authorizationHeader == null || !authorizationHeader.StartsWith("Bearer ")) return null;
+        var token = httpContext.Request.Cookies["Authorization"];
+        if (token.Equals(null)) return null;
 
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        if (!token.StartsWith("Bearer ")) return null;
+
+        token = token.Substring("Bearer ".Length).Trim();
 
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
-        var userMail =
-            jwtToken.Claims.FirstOrDefault(claim =>
-                claim.Type == "sub");
+        var userMail = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "sub");
 
-        if (userMail == null) return null;
-
-        return userMail.Value;
+        return userMail?.Value;
     }
 }

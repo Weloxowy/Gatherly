@@ -198,7 +198,11 @@ public class UserEntityRepository : IUserEntityRepository
                     .SingleOrDefault(x => x.Email == data.Email);
                 if (user == null) return null;
                 var verify = VerifyPassword(data.Password, user.PasswordHash);
-                if (verify) return user;
+                if (verify)
+                {
+                    UpdateLastTimeLoggedAsync(user);
+                    return user;
+                }
                 return null;
             }
         }
@@ -288,6 +292,28 @@ public class UserEntityRepository : IUserEntityRepository
                 return user;
 
             }
+        }
+    }
+
+    public async Task<Models.Authentication.UserEntity.UserEntity?> UpdateLastTimeLoggedAsync(Models.Authentication.UserEntity.UserEntity user)
+    {
+        try
+        {
+            using (var session = _sessionFactory.OpenSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    user.LastTimeLogged = DateTime.Now;
+                    await session.UpdateAsync(user); 
+                    await transaction.CommitAsync();
+                    return user;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating last time logged: {ex.Message}");
+            return null;
         }
     }
 

@@ -11,7 +11,7 @@ public class RefreshTokenService : IRefreshTokenService
         return _refreshTokenRepository.GenerateRefreshToken(userId);
     }
 
-    public Task<Models.Tokens.RefreshToken.RefreshToken?> GetRefreshToken(string token)
+    public Models.Tokens.RefreshToken.RefreshToken? GetRefreshToken(string token)
     {
         return _refreshTokenRepository.GetRefreshToken(token);
     }
