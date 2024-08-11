@@ -154,8 +154,10 @@ public class AuthenticationController : ControllerBase
     [HttpPost("login/standard/verify")]
     public IActionResult LoginUserByPassword([FromBody] UserEntityDTOLoginPassword data)
     {
+        var isUser = _userService.IsUserExists(data.Email);
+        if (isUser == false) return NotFound("User profile not found");
         var user = _userService.VerifyUser(data);
-        if (user == null) return NotFound("User profile not found");
+        if (user == null) return Unauthorized("Credentials are invalid");
         try
         {
             var refresh = _refreshTokenService.GenerateRefreshToken(user.Id);
@@ -245,13 +247,13 @@ public class AuthenticationController : ControllerBase
         if (user == null) return NotFound("User profile not found");
 
         var authorizationHeader = HttpContext.Request.Cookies["Authorization"];
-        if (authorizationHeader == null || !authorizationHeader.StartsWith("Bearer "))
+        if (authorizationHeader == null || authorizationHeader.StartsWith("Bearer "))
         {
             Response.Cookies.Delete("Authorization");
         }
 
         var refreshTokenHeader = HttpContext.Request.Cookies["RefreshToken"];
-        if (refreshTokenHeader == null)
+        if (refreshTokenHeader != null)
         {
             var refreshToken = refreshTokenHeader.Trim();
             _blacklistTokenService.AddToBlacklist(refreshToken, user.Id, DateTime.Now.AddHours(2));
@@ -290,7 +292,7 @@ public class AuthenticationController : ControllerBase
             _mailEntityService.SendRecoveryEmailAsync(user, session);
             return Ok("Email was send succesfully");
         }
-        catch (Exception exception)
+        catch
         {
             //return StatusCode(500, exception.Message);
             return StatusCode(500, "There was a problem while creating a recovery link. Please try again later");

@@ -1,11 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+﻿using System.Security.Claims;
 using gatherly.server.Models.Authentication.UserEntity;
-using gatherly.server.Models.Tokens.TokenEntity;
-using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
-using Moq;
 using Xunit;
 
 namespace gatherly.server.Persistence.Tokens.TokenEntity._test;
@@ -109,4 +103,5 @@ public class TokenEntityRepositoryTests
         // Assert
         Assert.Null(email);
     }
+    
 }

@@ -7,7 +7,7 @@ public class UserEntity
     }
 
     public UserEntity(Guid id, string name, string email, string avatarName, DateTime? lastTimeLogged,
-        UserRole userRole, string passwordHash)
+        UserRole userRole, string passwordHash, TimeZoneInfo timeZoneInfo)
     {
         Id = id;
         Name = name;
@@ -16,6 +16,7 @@ public class UserEntity
         LastTimeLogged = lastTimeLogged;
         UserRole = userRole;
         PasswordHash = passwordHash;
+        TimeZoneInfo = timeZoneInfo;
     }
 
     public virtual Guid Id { get; set; }
@@ -25,4 +26,5 @@ public class UserEntity
     public virtual string AvatarName { get; set; }
     public virtual DateTime? LastTimeLogged { get; set; }
     public virtual UserRole UserRole { get; set; }
+    public virtual TimeZoneInfo TimeZoneInfo { get; set; }
 }

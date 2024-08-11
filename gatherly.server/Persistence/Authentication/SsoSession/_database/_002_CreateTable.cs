@@ -26,9 +26,7 @@ public class _002_CreateTable : Migration
 
     public override void Down()
     {
-        if (!Schema.Table(_tableName).Exists()) return;
         Delete.ForeignKey("FK_SSO_User");
-        Delete.PrimaryKey(nameof(Models.Authentication.SsoSession.SsoSession.Id)).FromTable(_tableName);
         Delete.Table(_tableName);
     }
 }

@@ -74,7 +74,7 @@ public class AuthenticationControllerTests
         // Arrange
         var email = "user1@example.com";
         var user = new UserEntity { Id = Guid.NewGuid(), Email = email };
-        var ssoCode = "SSO123";
+        
 
         _userServiceMock.Setup(service => service.GetUserInfo(email)).Returns(user);
         //_ssoSessionServiceMock.Setup(service => service.CreateSso(user.Id, email)).Returns(ssoCode);

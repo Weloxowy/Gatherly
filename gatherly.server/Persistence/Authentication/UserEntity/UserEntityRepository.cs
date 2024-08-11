@@ -142,7 +142,7 @@ public class UserEntityRepository : IUserEntityRepository
                     transaction.Commit();
                     return true;
                 }
-                catch (Exception ex)
+                catch
                 {
                     transaction.Rollback();
                     return false;
@@ -166,19 +166,26 @@ public class UserEntityRepository : IUserEntityRepository
                     .SingleOrDefault(x => x.Email == newData.Email);
 
                 if (user != null) return null;
-
-                var newUser = new Models.Authentication.UserEntity.UserEntity
+                try
                 {
-                    Email = newData.Email,
-                    PasswordHash = HashingPassword(newData.Password),
-                    AvatarName = "default",
-                    Name = newData.Name,
-                    UserRole = UserRole.User,
-                    LastTimeLogged = DateTime.Now
-                };
-                session.Save(newUser);
-                transaction.Commit();
-                return newUser;
+                    var newUser = new Models.Authentication.UserEntity.UserEntity
+                    {
+                        Email = newData.Email,
+                        PasswordHash = HashingPassword(newData.Password),
+                        AvatarName = "default",
+                        Name = newData.Name,
+                        UserRole = UserRole.User,
+                        LastTimeLogged = DateTime.Now
+                    };
+                    session.Save(newUser);
+                    transaction.Commit();
+                    return newUser;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    return null;
+                }
             }
         }
     }
@@ -304,6 +311,30 @@ public class UserEntityRepository : IUserEntityRepository
                 using (var transaction = session.BeginTransaction())
                 {
                     user.LastTimeLogged = DateTime.Now;
+                    await session.UpdateAsync(user); 
+                    await transaction.CommitAsync();
+                    return user;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating last time logged: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<Models.Authentication.UserEntity.UserEntity> ChangeUserStatus(Guid id)
+    {
+        try
+        {
+            using (var session = _sessionFactory.OpenSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    var user = await session.GetAsync<Models.Authentication.UserEntity.UserEntity>(id);
+                    if (user == null) return null;
+                    user.UserRole = (user.UserRole == UserRole.Admin) ? UserRole.Admin : UserRole.User;
                     await session.UpdateAsync(user); 
                     await transaction.CommitAsync();
                     return user;

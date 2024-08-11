@@ -10,6 +10,13 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace gatherly.server.Controllers.Tokens;
 
+/// <summary>
+///     Controller responsible for handling operations related to tokens.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints for managing tokens, such as issuing, refreshing, and invalidating tokens.
+///     It also includes operations related to blacklisting tokens.
+/// </remarks>
 [Route("api/[controller]")]
 [ApiController]
 public class TokensController : ControllerBase
@@ -19,6 +26,13 @@ public class TokensController : ControllerBase
     private readonly ITokenEntityService _tokenEntityService;
     private readonly IUserEntityService _userEntityService;
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="TokensController"/> class.
+    /// </summary>
+    /// <param name="tokenEntityService">Service for token-related operations.</param>
+    /// <param name="refreshTokenService">Service for refresh token operations.</param>
+    /// <param name="userEntityService">Service for user-related operations.</param>
+    /// <param name="blacklistTokenService">Service for managing blacklisted tokens.</param>
     public TokensController(ITokenEntityService tokenEntityService, IRefreshTokenService refreshTokenService,
         IUserEntityService userEntityService, IBlacklistTokenService blacklistTokenService)
     {

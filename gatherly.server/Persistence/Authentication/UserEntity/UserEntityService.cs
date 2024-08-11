@@ -51,4 +51,8 @@ public class UserEntityService : IUserEntityService
     {
         return _userEntityRepository.ChangeUserPassword(data);
     }
+    public Task<Models.Authentication.UserEntity.UserEntity> ChangeUserStatus(Guid id)
+    {
+        return _userEntityRepository.ChangeUserStatus(id);
+    }
 }

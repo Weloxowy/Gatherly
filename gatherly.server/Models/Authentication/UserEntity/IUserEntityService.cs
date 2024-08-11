@@ -13,5 +13,6 @@ public interface IUserEntityService
     public UserEntity? CreateNewUser(UserEntityDTOCreate newData);
     public UserEntity? VerifyUser(UserEntityDTOLoginPassword data);
     public UserEntity? ChangeUserPassword(UserEntityDTOResetPassword data);
+    public Task<UserEntity> ChangeUserStatus(Guid id);
 
 }

@@ -209,4 +209,5 @@ public class UserController : ControllerBase
             return StatusCode(500, "There was a problem while deleting the user. Please try again later");
         return Ok("User deleted");
     }
+    
 }

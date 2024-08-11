@@ -1,9 +1,15 @@
 ﻿@model dynamic
 
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <style>
-
+        @@font-face {
+            font-family: 'MyCustomFont';
+            src: url('fonts/Satoshi-Variable.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
         body {
             font-family: 'Cabinet Grotesk', sans-serif;
             margin: 0;
@@ -76,7 +82,7 @@
     <h2>Jednorazowy kod SSO</h2>
     <p>Cześć @Model.Name, otrzymaliśmy dyspozycję zalogowania się na konto powiązane z tym adresem email. Podaj poniższy kod aby się zalogować.</p>
     <p>Kod dostępu:</p>
-    <p class="codeSection">@Model.VerificationCode</p>  
+    <p class="codeSection">@Model.VerificationCode</p>
 </main>
 <footer>
     Gatherly 2024

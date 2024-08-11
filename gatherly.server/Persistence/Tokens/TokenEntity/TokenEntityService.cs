@@ -23,5 +23,10 @@ public class TokenEntityService : ITokenEntityService
     {
         return _tokenEntityRepository.GetEmailFromRequestCookie(httpContext);
     }
+
+    public string GetIdFromRequestCookie(HttpContext httpContext)
+    {
+        return _tokenEntityRepository.GetIdFromRequestCookie(httpContext);
+    }
     
 }

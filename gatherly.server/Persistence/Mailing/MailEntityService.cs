@@ -23,5 +23,9 @@ public class MailEntityService : IMailEntityService
     {
         return _mailEntityRepository.SendRecoveryEmailAsync(user, session);
     }
-    
+
+    public Task SendMeetingDeletedAsync(string userName, string userMail, string meetingName)
+    {
+        return _mailEntityRepository.SendMeetingDeletedAsync(userName, userMail, meetingName);
+    }
 }

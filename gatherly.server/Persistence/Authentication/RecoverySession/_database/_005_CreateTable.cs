@@ -5,7 +5,7 @@ namespace gatherly.server.Persistence.Authentication.RecoverySession._database;
 public class _005_CreateTable : Migration
 {
     private readonly string _tableName = "RecoverySession";
-    
+
     public override void Up()
     {
         if (!Schema.Table(_tableName).Exists())
@@ -24,9 +24,7 @@ public class _005_CreateTable : Migration
 
     public override void Down()
     {
-        if (!Schema.Table(_tableName).Exists()) return;
         Delete.ForeignKey("FK_Recovery_User");
-        Delete.PrimaryKey(nameof(Models.Authentication.RecoverySession.RecoverySession.Id)).FromTable(_tableName);
         Delete.Table(_tableName);
     }
 }

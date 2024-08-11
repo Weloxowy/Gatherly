@@ -98,4 +98,63 @@ public class TokenEntityRepository : ITokenEntityRepository
 
         return userMail?.Value;
     }
+    
+    /// <summary>
+    ///     Extracts the email from the JWT token present in the cookies and retrieves the user ID.
+    /// </summary>
+    /// <param name="httpContext">The HTTP context containing the request cookies.</param>
+    /// <returns>ID of the user if valid; otherwise, null.</returns>
+    public string GetIdFromRequestCookie(HttpContext httpContext)
+    {
+        //if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
+
+        //if (!httpContext.Request.Cookies.TryGetValue("Authorization", out var token) || string.IsNullOrWhiteSpace(token))
+        //{
+        //    return null;
+        //}
+
+        //if (!token.StartsWith("Bearer "))
+        //{
+        //    return null;
+        //}
+
+        //token = token.Substring("Bearer ".Length).Trim();
+
+        //var handler = new JwtSecurityTokenHandler();
+        //JwtSecurityToken jwtToken;
+
+        //try
+        //{
+        //    jwtToken = handler.ReadJwtToken(token);
+        //}
+        //catch (ArgumentException)
+        //{
+        //    return null;
+        //}
+
+        //var userMailClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == JwtRegisteredClaimNames.Email);
+        //if (userMailClaim == null)
+        //{
+        //    return null;
+        //}
+        //var userEmail = userMailClaim.Value;
+
+        var token = httpContext.Request.Cookies["Authorization"];
+        if (token.Equals(null)) return null;
+
+        if (!token.StartsWith("Bearer ")) return null;
+
+        token = token.Substring("Bearer ".Length).Trim();
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.ReadJwtToken(token);
+        var userEmail = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "sub").Value;
+        
+        using (var session = NHibernateHelper.OpenSession())
+        {
+            var user = session.Query<UserEntity>().FirstOrDefault(x => x.Email == userEmail);
+            return user?.Id.ToString();
+        }
+    }
+
 }

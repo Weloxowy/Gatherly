@@ -47,7 +47,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Controllers\Mailing\" />
         <Folder Include="Entities\Authorization\" />
         <Folder Include="Entities\Mailling\" />
         <Folder Include="Models\Authorization\" />
