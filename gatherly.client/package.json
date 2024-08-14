@@ -20,7 +20,7 @@
     "@mantine/spotlight": "^7.11.1",
     "@tabler/icons-react": "^3.11.0",
     "@testing-library/react": "^16.0.0",
-    "axios": "^1.7.2",
+    "axios": "^1.7.4",
     "bootstrap-icons": "^1.11.3",
     "i18next": "^23.11.5",
     "jest-environment-jsdom": "^29.7.0",
