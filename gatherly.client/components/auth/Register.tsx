@@ -21,7 +21,7 @@ const Register: React.FC<AuthProps> = ({setAuthMethod, options}) => {
             window.location.href = "/autorization";
         } catch (error: any) {
             console.error('Error in handleSubmitForm:', error);
-            switch (error.code) {
+            switch (error.status) {
                 case 400:
                     form.setErrors({email: 'Istnieje już użytkownik o takim adresie email'});
                     break;
@@ -42,10 +42,10 @@ const Register: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                            required/>
                 <PasswordInput size="md" label="Hasło" {...form.getInputProps('password')} required/>
                 <Group justify="space-between" mt="lg">
-                    <Anchor component="button" size="md" onClick={() => setAuthMethod(options.loginTraditional)}>
+                    <Anchor component="div" size="md" onClick={() => setAuthMethod(options.loginTraditional)}>
                         Logowanie
                     </Anchor>
-                    <Anchor component="button" size="md" onClick={() => setAuthMethod(options.recover)}>
+                    <Anchor component="div" size="md" onClick={() => setAuthMethod(options.recover)}>
                         Odzyskaj konto
                     </Anchor>
                 </Group>

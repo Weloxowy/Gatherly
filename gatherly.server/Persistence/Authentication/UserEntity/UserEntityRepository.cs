@@ -168,14 +168,15 @@ public class UserEntityRepository : IUserEntityRepository
                 if (user != null) return null;
                 try
                 {
+                    Random random = new Random();
                     var newUser = new Models.Authentication.UserEntity.UserEntity
                     {
                         Email = newData.Email,
                         PasswordHash = HashingPassword(newData.Password),
-                        AvatarName = "default",
+                        AvatarName = "avatar"+random.Next(1, 15),
                         Name = newData.Name,
                         UserRole = UserRole.User,
-                        LastTimeLogged = DateTime.Now
+                        LastTimeLogged = DateTime.UtcNow
                     };
                     session.Save(newUser);
                     transaction.Commit();
@@ -310,7 +311,7 @@ public class UserEntityRepository : IUserEntityRepository
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    user.LastTimeLogged = DateTime.Now;
+                    user.LastTimeLogged = DateTime.UtcNow;
                     await session.UpdateAsync(user); 
                     await transaction.CommitAsync();
                     return user;

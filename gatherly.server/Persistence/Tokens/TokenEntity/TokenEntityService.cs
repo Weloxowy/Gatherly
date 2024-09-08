@@ -19,12 +19,12 @@ public class TokenEntityService : ITokenEntityService
     }
 
    
-    public string GetEmailFromRequestCookie(HttpContext httpContext)
+    public string? GetEmailFromRequestCookie(HttpContext httpContext)
     {
         return _tokenEntityRepository.GetEmailFromRequestCookie(httpContext);
     }
 
-    public string GetIdFromRequestCookie(HttpContext httpContext)
+    public string? GetIdFromRequestCookie(HttpContext httpContext)
     {
         return _tokenEntityRepository.GetIdFromRequestCookie(httpContext);
     }

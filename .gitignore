@@ -74,3 +74,6 @@ gatherly.client/.scannerwork
 /.scannerwork
 /sonar-project.properties
 /gatherly.client/.scannerwork/
+/gatherly.server/Content/reminders/
+/docker-compose.yml
+/gatherly.client/.env

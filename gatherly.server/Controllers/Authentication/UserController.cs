@@ -10,7 +10,7 @@ namespace gatherly.server.Controllers.Authentication;
 /// <summary>
 ///     Controller for managing user profiles and operations.
 /// </summary>
-[Route("api/auth")]
+[Route("/api/[controller]")]
 [ApiController]
 public class UserController : ControllerBase
 {
@@ -49,6 +49,7 @@ public class UserController : ControllerBase
     [HttpGet("profile")]
     public async Task<ActionResult<UserEntity>> GetLoggedInUserProfile()
     {
+
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have no access to this resource");
 

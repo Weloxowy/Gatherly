@@ -4,6 +4,7 @@ using gatherly.server.Models.Meetings.UserMeeting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FluentNHibernate.Conventions;
+using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Meetings.Meeting;
 using gatherly.server.Models.Tokens.TokenEntity;
 
@@ -23,6 +24,7 @@ public class InvitationsController : ControllerBase
     private readonly IInvitationsService _invitationsService;
     private readonly IMeetingService _meetingService;
     private readonly ITokenEntityService _tokenService;
+    private readonly IUserEntityService _userEntityService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InvitationsController"/> class.
@@ -32,12 +34,13 @@ public class InvitationsController : ControllerBase
     /// <param name="meetingService">Service for managing meeting-related operations.</param>
     /// <param name="tokenService">Service for handling token-related operations, including user authentication and authorization.</param>
     public InvitationsController(IUserMeetingService userMeetingService, IInvitationsService invitationsService, 
-        IMeetingService meetingService, ITokenEntityService tokenService)
+        IMeetingService meetingService, ITokenEntityService tokenService, IUserEntityService userEntityService)
     {
         _userMeetingService = userMeetingService;
         _invitationsService = invitationsService;
         _meetingService = meetingService;
         _tokenService = tokenService;
+        _userEntityService = userEntityService;
     }
     
     /// <summary>
@@ -61,14 +64,27 @@ public class InvitationsController : ControllerBase
             var userId = _tokenService.GetIdFromRequestCookie(HttpContext);
             if (userId.IsEmpty())
             {
-                return NotFound("User not found.");
+                return NotFound("Requesting user not found.");
             }
+            
             var isMeetingOwner = await _meetingService.IsUserAnMeetingOwner(invitation.MeetingId, Guid.Parse(userId));
-            if (isMeetingOwner == false)
+            if (!isMeetingOwner)
             {
                 return Unauthorized("You are not authorized to create this invitation.");
             }
-            var newInvitation = await _invitationsService.CreateInvitation(invitation);
+
+            var userInfo = _userEntityService.GetUserInfo(invitation.UserEmail);
+            if (userInfo == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            var invitationDTO = new InvitationDTO()
+            {
+                MeetingId = invitation.MeetingId,
+                UserId = userInfo.Id
+            };
+            var newInvitation = await _invitationsService.CreateInvitation(invitationDTO);
             return Ok(newInvitation);
         }
         catch
@@ -100,7 +116,14 @@ public class InvitationsController : ControllerBase
             {
                 return NotFound("User not found.");
             }
-            var isMeetingOwner = await _meetingService.IsUserAnMeetingOwner(invitationId, Guid.Parse(userId));
+
+            var invitation = await _invitationsService.GetInvitationById(invitationId);
+            if (invitation == null)
+            {
+                return NotFound("Invitation not found.");
+            }
+            
+            var isMeetingOwner = await _meetingService.IsUserAnMeetingOwner(invitation.MeetingId, Guid.Parse(userId));
             if (isMeetingOwner == false)
             {
                 return Unauthorized("You are not authorized to delete this invitation.");
@@ -139,7 +162,7 @@ public class InvitationsController : ControllerBase
             }
             
             var invitation = await _invitationsService.GetInvitationById(invitationId);
-            if (invitation.UserId.Equals(Guid.Parse(userId)))
+            if (invitation.UserId != Guid.Parse(userId))
             {
                 return Unauthorized("You are not authorized to confirm this invitation.");
             }
@@ -186,7 +209,7 @@ public class InvitationsController : ControllerBase
             }
             
             var invitation = await _invitationsService.GetInvitationById(invitationId);
-            if (invitation.UserId.Equals(Guid.Parse(userId)))
+            if (invitation.UserId != Guid.Parse(userId))
             {
                 return Unauthorized("You are not authorized to decline this invitation.");
             }
@@ -210,27 +233,29 @@ public class InvitationsController : ControllerBase
     /// <response code="401">The requesting user is not authorized to view these invitations.</response>
     /// <response code="404">The user does not exist.</response>
     /// <response code="500">An internal server error occurred.</response>
-    [HttpGet("/user")]
+    [HttpGet("user")]
     [Authorize]
-    public async Task<ActionResult> GetAllInvitationsByUserId()
+   public async Task<ActionResult> GetAllInvitationsByUserId()
+{
+    try
     {
-        try
+        var userId = _tokenService.GetIdFromRequestCookie(HttpContext);
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out Guid userGuid))
         {
-            var userId = _tokenService.GetIdFromRequestCookie(HttpContext);
-            if (userId.IsEmpty())
-            {
-                return NotFound("User not found.");
-            }
-            
-            var invitation = await _invitationsService.GetAllInvitationsByUserId(Guid.Parse(userId));
-            
-            return Ok(invitation);
+            return NotFound("Invalid user ID format.");
         }
-        catch
-        {
-            return StatusCode(500, "Internal server error");
-        }
+
+        var invitation = await _invitationsService.GetAllInvitationsByUserId(userGuid);
+        return Ok(invitation);
     }
+    catch (Exception ex)
+    {
+        // Log the exception
+        Console.WriteLine(ex +"Error occurred while getting invitations by user ID");
+        return StatusCode(500, "Internal server error");
+    }
+}
+
     
     /// <summary>
     ///     Returns a list of invitations for a specified meeting. Can only be performed by a user invited to the meeting.
@@ -244,7 +269,7 @@ public class InvitationsController : ControllerBase
     /// <response code="401">The requesting user is not authorized to view these invitations.</response>
     /// <response code="404">The meeting or invitations do not exist.</response>
     /// <response code="500">An internal server error occurred.</response>
-    [HttpGet("/meeting/{meetingId}")]
+    [HttpGet("meeting/{meetingId}")]
     [Authorize]
     public async Task<ActionResult> GetAllInvitationsByMeetingId(Guid meetingId)
     {
@@ -253,15 +278,11 @@ public class InvitationsController : ControllerBase
             var userIdFromRequestCookie = _tokenService.GetIdFromRequestCookie(HttpContext);
             if (userIdFromRequestCookie.IsEmpty())
             {
-                return NotFound("User not found.");
+                return Unauthorized("User token not valid.");
             }
             
             var invitation = await _invitationsService.GetAllInvitationsByMeetingId(meetingId);
-            var isUserInIt = invitation.FirstOrDefault(x => x.UserId.Equals(userIdFromRequestCookie));
-            if (isUserInIt == null)
-            {
-                return Unauthorized("You are not authorized to view these invitations.");
-            }
+            
             return Ok(invitation);
         }
         catch

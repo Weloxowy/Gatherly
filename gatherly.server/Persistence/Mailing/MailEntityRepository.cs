@@ -4,7 +4,6 @@ using gatherly.server.Models.Authentication.RecoverySession;
 using gatherly.server.Models.Authentication.SsoSession;
 using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Mailing.MailEntity;
-using gatherly.server.Models.Meetings.Meeting;
 using NHibernate;
 
 namespace gatherly.server.Persistence.Mailing.EmailTemplates;

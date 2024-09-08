@@ -1,7 +1,8 @@
 ﻿"use client"
 import { Button, Container, Title } from '@mantine/core';
 import logoutUser from "@/lib/auth/logoutUser";
-import axiosInstance from "@/lib/AxiosInstance";
+import axiosInstance from "@/lib/utils/AxiosInstance";
+import Link from "next/link";
 //page only for tests
 export default function AutorizationTestPage() {
     //const [data, setData] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export default function AutorizationTestPage() {
     const handleLogout = async () => {
         try {
             await logoutUser();
-            window.location.href = '/auth'; // lub inna ścieżka
+            window.location.href = '/auth';
         } catch (error) {
             console.error('Logout failed:', error);
         }
@@ -32,9 +33,9 @@ export default function AutorizationTestPage() {
 
     const handleGetInfo = async () => {
         try {
-            const response = await axiosInstance.get('auth/profile', {
+            const response = await axiosInstance.get('User/profile', {
             });
-            console.log('Get user info response:', response);
+            //console.log('Get user info response:', response);
         } catch (error) {
             console.error('Get user info failed:', error);
         }
@@ -45,9 +46,19 @@ export default function AutorizationTestPage() {
                 'Tokens/refresh/validate',
                 {}
             );
-            console.log('Refresh validation response:', response);
+            //console.log('Refresh validation response:', response);
         } catch (error) {
             console.error('Refresh validation failed:', error);
+        }
+    };
+
+    const handleGetInfoById = async () => {
+        try {
+            const response = await axiosInstance.get('User/profile/7CB79F46-55D5-4908-BE27-B1C3010D408F', {
+            });
+            //console.log('Get user info response:', response);
+        } catch (error) {
+            console.error('Get user info failed:', error);
         }
     };
 
@@ -58,11 +69,12 @@ export default function AutorizationTestPage() {
                 'Tokens/jwt/validate',
                 {},
             );
-            console.log('JWT validation response:', response);
+            //console.log('JWT validation response:', response);
         } catch (error) {
             console.error('JWT validation failed:', error);
         }
     };
+
 
     return (
         <main>
@@ -92,6 +104,12 @@ export default function AutorizationTestPage() {
                     </Button>
                     <Button onClick={handleGetInfo}>
                         GET info
+                    </Button>
+                    <Button onClick={handleGetInfoById}>
+                        GET info by id
+                    </Button>
+                    <Button component={Link} href={"/home"}>
+                        Przejdź do panelu
                     </Button>
                 </Container>
             </Container>

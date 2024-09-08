@@ -23,7 +23,7 @@ const Recover: React.FC<AuthProps> = ({setAuthMethod, options}) => {
             }
         } catch (error: any) {
             console.error('Error in handleSubmitForm1:', error);
-            switch (error.code) {
+            switch (error.status) {
                 case 400:
                     form.setFieldError('email', 'Podano nieprawidłowy adres');
                     break;
@@ -52,10 +52,10 @@ const Recover: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                         required
                     />
                     <Group justify="space-between" mt="lg">
-                        <Anchor component="button" size="md" onClick={() => setAuthMethod(options.loginTraditional)}>
+                        <Anchor component="div" size="md" onClick={() => setAuthMethod(options.loginTraditional)}>
                             Logowanie
                         </Anchor>
-                        <Anchor component="button" size="md" onClick={() => setAuthMethod(options.register)}>
+                        <Anchor component="div" size="md" onClick={() => setAuthMethod(options.register)}>
                             Rejestracja
                         </Anchor>
                     </Group>

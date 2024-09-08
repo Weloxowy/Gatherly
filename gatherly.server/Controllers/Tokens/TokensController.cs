@@ -238,8 +238,8 @@ public class TokensController : ControllerBase
                 
                 await _refreshTokenService.RevokeRefreshToken(jti);
                 
-                _blacklistTokenService.AddToBlacklist(jwtToken, user.Id, DateTime.Now.AddHours(2));
-                _blacklistTokenService.AddToBlacklist(jti, user.Id, DateTime.Now.AddHours(2));
+                _blacklistTokenService.AddToBlacklist(jwtToken, user.Id, DateTime.UtcNow.AddHours(2));
+                _blacklistTokenService.AddToBlacklist(jti, user.Id, DateTime.UtcNow.AddHours(2));
                 
                 Response.Cookies.Delete("Authorization");
                 Response.Cookies.Delete("RefreshToken");
@@ -263,7 +263,7 @@ public class TokensController : ControllerBase
 
                 var userId = oldRefreshToken.UserId;
                 await _refreshTokenService.RevokeRefreshToken(refreshToken);
-                _blacklistTokenService.AddToBlacklist(refreshToken, userId, DateTime.Now.AddHours(2));
+                _blacklistTokenService.AddToBlacklist(refreshToken, userId, DateTime.UtcNow.AddHours(2));
 
                 Response.Cookies.Delete("Authorization");
                 Response.Cookies.Delete("RefreshToken");

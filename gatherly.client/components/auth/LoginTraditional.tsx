@@ -1,15 +1,16 @@
 ﻿import React from "react";
-import {Anchor, Button, Group, PasswordInput, TextInput} from "@mantine/core";
+import {Anchor, Button, FocusTrap, Group, PasswordInput, TextInput} from "@mantine/core";
 import {useForm} from "@mantine/form";
 import loginValid from "@/lib/auth/LoginValid";
 import {AuthProps} from "@/lib/interfaces/types";
+import Link from "next/link";
 
 const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
     const form = useForm({
         initialValues: {
             email: '', password: '',
-        }, validate: {
-            email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'),
+        }, validate: {//  ^\S+@\S+\.+\S{2}
+            email: (value) => (/^\S+@\S+\.+\S{2}/.test(value) ? null : 'Nieprawidłowy adres email'),
         },
     });
 
@@ -19,10 +20,12 @@ const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
             window.location.href = "/autorization";
         } catch (error: any) {
             console.error('Error in handleSubmitForm:', error);
-            switch (error.code) {
-                case 400:
-                case 404:
+            switch (error.status) {
+                case 401:
                     form.setErrors({password: 'Podano nieprawidłowy dane uwierzytelniające'});
+                    break;
+                case 404:
+                    form.setErrors({password: 'Podany użytkownik nie istnieje'});
                     break;
                 case 500:
                     form.setErrors({password: 'Wystąpił wewnętrzny błąd serwera. Spróbuj ponownie później'});
@@ -41,13 +44,14 @@ const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                 <PasswordInput size="md" label="Password"
                                {...form.getInputProps('password')} required/>
                 <Group justify="space-between" mt="lg">
-                    <Anchor component="button" size="md" onClick={() => setAuthMethod(options.loginByCode)}>
+                    <Anchor component="div" size="md" onClick={() => setAuthMethod(options.loginByCode)}>
                         Logowanie jednorazowe
                     </Anchor>
-                    <Anchor component="button" size="md" onClick={() => setAuthMethod(options.recover)}>
+                    <Anchor component="div" size="md" onClick={() => setAuthMethod(options.recover)}>
                         Odzyskaj konto
                     </Anchor>
                 </Group>
+
                 <Button fullWidth mt="lg" type="submit">
                     Zaloguj
                 </Button>

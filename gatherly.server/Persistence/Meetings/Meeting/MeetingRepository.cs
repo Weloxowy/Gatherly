@@ -19,6 +19,18 @@ public class MeetingRepository : IMeetingRepository
         {
             using (var transaction = session.BeginTransaction())
             {
+                // Correctly set the DateTimeKind
+                var startOfTheMeeting = DateTime.SpecifyKind(meetingDto.StartOfTheMeeting, DateTimeKind.Unspecified);
+                var endOfTheMeeting = DateTime.SpecifyKind(meetingDto.EndOfTheMeeting, DateTimeKind.Unspecified);
+
+                // Retrieve the timezone
+                var timezone = TimeZoneInfo.FindSystemTimeZoneById(meetingDto.TimeZone);
+
+                // Convert the DateTime to UTC using the specified timezone
+                var startUtc = TimeZoneInfo.ConvertTimeToUtc(startOfTheMeeting, timezone);
+                var endUtc = TimeZoneInfo.ConvertTimeToUtc(endOfTheMeeting, timezone);
+
+                // Create the meeting entity
                 var meeting = new Models.Meetings.Meeting.Meeting
                 {
                     Id = Guid.NewGuid(),
@@ -28,12 +40,14 @@ public class MeetingRepository : IMeetingRepository
                     PlaceName = meetingDto.PlaceName,
                     Lon = meetingDto.Lon,
                     Lat = meetingDto.Lat,
-                    StartOfTheMeeting = meetingDto.StartOfTheMeeting,
-                    EndOfTheMeeting = meetingDto.EndOfTheMeeting,
+                    StartOfTheMeeting = startUtc,
+                    EndOfTheMeeting = endUtc,
                     IsMeetingTimePlanned = meetingDto.IsMeetingTimePlanned,
-                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById(meetingDto.TimeZone),
+                    TimeZone = timezone,
+                    CreationTime = DateTime.UtcNow
                 };
 
+                // Save the meeting and commit the transaction
                 await session.SaveAsync(meeting);
                 await transaction.CommitAsync();
 
@@ -48,40 +62,40 @@ public class MeetingRepository : IMeetingRepository
         using (var session = _sessionFactory.OpenSession())
         {
             var meeting = await session.GetAsync<Models.Meetings.Meeting.Meeting>(meetingId);
+            meeting.StartOfTheMeeting = TimeZoneInfo.ConvertTimeFromUtc(meeting.StartOfTheMeeting, meeting.TimeZone);
+            meeting.EndOfTheMeeting = TimeZoneInfo.ConvertTimeFromUtc(meeting.EndOfTheMeeting, meeting.TimeZone);
             return meeting;
         }
     }
 
-    public async Task<Models.Meetings.Meeting.Meeting> UpdateAllMeetingData(Guid meetingId, Models.Meetings.Meeting.Meeting meetingNewData)
+public async Task<Models.Meetings.Meeting.Meeting> UpdateAllMeetingData(Guid meetingId, Models.Meetings.Meeting.Meeting meetingNewData)
+{
+    using (var session = _sessionFactory.OpenSession())
     {
-        using (var session = _sessionFactory.OpenSession())
+        using (var transaction = session.BeginTransaction())
         {
-            using (var transaction = session.BeginTransaction())
-            {
-                var meeting = await session.GetAsync<Models.Meetings.Meeting.Meeting>(meetingId);
+            var meeting = await session.GetAsync<Models.Meetings.Meeting.Meeting>(meetingId);
 
-                if (meeting == null) return null;
+            if (meeting == null) return null;
+            
+            meeting.MeetingName = meetingNewData.MeetingName;
+            meeting.Description = meetingNewData.Description;
+            meeting.PlaceName = meetingNewData.PlaceName;
+            meeting.Lon = meetingNewData.Lon;
+            meeting.Lat = meetingNewData.Lat;
+            meeting.StartOfTheMeeting = meetingNewData.StartOfTheMeeting;
+            meeting.EndOfTheMeeting = meetingNewData.EndOfTheMeeting;
+            meeting.IsMeetingTimePlanned = meetingNewData.IsMeetingTimePlanned;
+            meeting.TimeZone = meetingNewData.TimeZone;
 
-                var meetingType = typeof(Models.Meetings.Meeting.Meeting);
-                var newDataType = meetingNewData.GetType();
-                var meetingProperties = meetingType.GetProperties();
-
-                foreach (var property in meetingProperties)
-                {
-                    var newDataProperty = newDataType.GetProperty(property.Name);
-                    if (newDataProperty != null && newDataProperty.PropertyType == property.PropertyType)
-                    {
-                        var value = newDataProperty.GetValue(meetingNewData);
-                        if (value != null) property.SetValue(meeting, value);
-                    }
-                }
-
-                await session.UpdateAsync(meeting);
-                await transaction.CommitAsync();
-                return meeting;
-            }
+            await session.UpdateAsync(meeting);
+            await transaction.CommitAsync();
+            return meeting;
         }
     }
+}
+
+
 
     public async Task<bool> DeleteMeeting(Guid meetingId)
     {
@@ -144,8 +158,8 @@ public class MeetingRepository : IMeetingRepository
                     var meeting = await session.GetAsync<Models.Meetings.Meeting.Meeting>(meetingId);
                     if (meeting == null) return null;
                     meeting.IsMeetingTimePlanned = !meeting.IsMeetingTimePlanned;
-                    meeting.StartOfTheMeeting = newStartDate;
-                    meeting.EndOfTheMeeting = newEndDate;
+                    meeting.StartOfTheMeeting = TimeZoneInfo.ConvertTimeToUtc(newStartDate,meeting.TimeZone);
+                    meeting.EndOfTheMeeting = TimeZoneInfo.ConvertTimeToUtc(newEndDate, meeting.TimeZone);
                     await session.UpdateAsync(meeting);
                     await transaction.CommitAsync();
                     return meeting;

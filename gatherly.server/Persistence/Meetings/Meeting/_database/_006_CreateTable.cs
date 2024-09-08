@@ -21,6 +21,7 @@ public class _006_CreateTable : Migration
                 .WithColumn(nameof(Models.Meetings.Meeting.Meeting.Lat)).AsDouble().NotNullable()
                 .WithColumn(nameof(Models.Meetings.Meeting.Meeting.StartOfTheMeeting)).AsDateTime().NotNullable()
                 .WithColumn(nameof(Models.Meetings.Meeting.Meeting.EndOfTheMeeting)).AsDateTime().NotNullable()
+                .WithColumn(nameof(Models.Meetings.Meeting.Meeting.CreationTime)).AsDateTime().NotNullable()
                 .WithColumn(nameof(Models.Meetings.Meeting.Meeting.IsMeetingTimePlanned)).AsBoolean().NotNullable()
                 .WithColumn(nameof(Models.Meetings.Meeting.Meeting.TimeZone)).AsString().NotNullable();
         }

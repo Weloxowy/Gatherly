@@ -1,0 +1,55 @@
+﻿.loggedMessage {
+    padding: 10px;
+    border-radius: 10px 10px 10px 0;
+    background-color: #7d62d1;
+    color: #f4f3f3;
+    margin: 10px 0; /* Margines tylko od góry i dołu */
+    word-wrap: break-word; /* Zapewnia zawijanie długich słów */
+    max-width: 40vw; /* Maksymalna szerokość jako procent szerokości widoku okna */
+    overflow-wrap: break-word; /* Alternatywa dla break-word, która obsługuje różne przypadki */
+    box-sizing: border-box; /* Zapewnia, że padding i border są wliczane do szerokości elementu */
+}
+
+.otherMessage {
+    padding: 10px;
+    border-radius: 10px 10px 10px 0;
+    background-color: #f4f3f3;
+    color: black;
+    margin: 10px 0; /* Margines tylko od góry i dołu */
+    word-wrap: break-word; /* Zapewnia zawijanie długich słów */
+    max-width: 40vw; /* Maksymalna szerokość jako procent szerokości widoku okna */
+    overflow-wrap: break-word; /* Alternatywa dla break-word, która obsługuje różne przypadki */
+    box-sizing: border-box; /* Zapewnia, że padding i border są wliczane do szerokości elementu */}
+
+.systemMessage {
+    text-align: center;
+    color: gray;
+    word-wrap: break-word;
+}
+.inputPanel {
+    margin-top: auto; /* Przyklejone do dołu */
+    display: flex; /* Flexbox layout */
+    align-items: center; /* Wyrównanie elementów w pionie */
+    padding: 10px; /* Margines wewnętrzny dla lepszego wyglądu */
+    gap: 10px; /* Odstęp między TextInput a Button */
+}
+
+.inputPanel .textInput {
+    flex-grow: 1; /* TextInput zajmuje maksymalnie dostępną przestrzeń */
+}
+
+.chatContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.scrollArea {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: clip;
+}
+.messagesContainer {
+    display: flex;
+    flex-direction: column;
+}

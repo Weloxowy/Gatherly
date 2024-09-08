@@ -19,6 +19,7 @@ public interface IUserMeetingRepository
     //np. jak ktoś przesunie ramy spotkania o 3 dni do przodu to bity z 3 pierwszych dni zostaną usunięte
     public Task<int> CountAllMeetingsByUserId(Guid userId); //ilosc spotkan danego uzytkownika - spotkan których data jest później niz aktualna
     public Task<List<MeetingDTOInfo>> GetAllMeetingsByUserId(Guid userId); //lista spotkan danego uzytkownika ktore sie nie odbyly
+    public Task<UserMeeting> GetInviteByIds(Guid meetingId, Guid userId); //znajdz encje usermeeting po id spotkania i usera
 
 
 }

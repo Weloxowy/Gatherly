@@ -5,6 +5,7 @@ import '@mantine/spotlight/styles.css';
 import {ColorSchemeScript, MantineProvider} from '@mantine/core';
 import React from "react";
 import {theme} from "@/app/theme";
+import {ModalsProvider} from "@mantine/modals";
 
 export const metadata = {
     title: 'Gatherly', description: 'Planowanie spotkania nigdy nie było prostsze!'
@@ -16,7 +17,11 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
             <ColorSchemeScript/><title></title>
         </head>
         <body>
-        <MantineProvider forceColorScheme={'light'} theme={theme}>{children}</MantineProvider>
+        <MantineProvider forceColorScheme={'light'} theme={theme}>
+            <ModalsProvider>
+                {children}
+            </ModalsProvider>
+        </MantineProvider>
         </body>
         </html>
 

@@ -1,9 +1,8 @@
-﻿import axiosInstance from "@/lib/AxiosInstance";
+﻿import axiosInstance from "@/lib/utils/AxiosInstance";
 
 async function sendSsoCode(email: string) {
     try {
         const response = await axiosInstance.post('auth/login/code/send', email);
-        console.log('Request successful:', response);
         return response.data;
     } catch (error) {
         throw error;

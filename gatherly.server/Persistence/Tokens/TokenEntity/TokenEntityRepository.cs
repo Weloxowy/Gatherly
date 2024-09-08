@@ -37,7 +37,7 @@ public class TokenEntityRepository : ITokenEntityRepository
             "localhost:44329",
             "localhost:3000",
             claims,
-            expires: DateTime.Now.AddMinutes(15),
+            expires: DateTime.UtcNow.AddMinutes(15),
             signingCredentials: creds
         );
 
@@ -83,20 +83,20 @@ public class TokenEntityRepository : ITokenEntityRepository
     /// </summary>
     /// <param name="httpContext">The HTTP context containing the request cookies.</param>
     /// <returns>The email extracted from the token if valid; otherwise, null.</returns>
-    public string GetEmailFromRequestCookie(HttpContext httpContext)
+    public string? GetEmailFromRequestCookie(HttpContext httpContext)
     {
-        var token = httpContext.Request.Cookies["Authorization"];
-        if (token.Equals(null)) return null;
+            string? token = httpContext.Request.Cookies["Authorization"];
+            if (token == null) return null;
 
-        if (!token.StartsWith("Bearer ")) return null;
+            if (!token.StartsWith("Bearer ")) return null;
 
-        token = token.Substring("Bearer ".Length).Trim();
+            token = token.Substring("Bearer ".Length).Trim();
 
-        var handler = new JwtSecurityTokenHandler();
-        var jwtToken = handler.ReadJwtToken(token);
-        var userMail = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "sub");
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            var userMail = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "sub");
 
-        return userMail?.Value;
+            return userMail?.Value;
     }
     
     /// <summary>
@@ -104,43 +104,10 @@ public class TokenEntityRepository : ITokenEntityRepository
     /// </summary>
     /// <param name="httpContext">The HTTP context containing the request cookies.</param>
     /// <returns>ID of the user if valid; otherwise, null.</returns>
-    public string GetIdFromRequestCookie(HttpContext httpContext)
+    public string? GetIdFromRequestCookie(HttpContext httpContext)
     {
-        //if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
-
-        //if (!httpContext.Request.Cookies.TryGetValue("Authorization", out var token) || string.IsNullOrWhiteSpace(token))
-        //{
-        //    return null;
-        //}
-
-        //if (!token.StartsWith("Bearer "))
-        //{
-        //    return null;
-        //}
-
-        //token = token.Substring("Bearer ".Length).Trim();
-
-        //var handler = new JwtSecurityTokenHandler();
-        //JwtSecurityToken jwtToken;
-
-        //try
-        //{
-        //    jwtToken = handler.ReadJwtToken(token);
-        //}
-        //catch (ArgumentException)
-        //{
-        //    return null;
-        //}
-
-        //var userMailClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == JwtRegisteredClaimNames.Email);
-        //if (userMailClaim == null)
-        //{
-        //    return null;
-        //}
-        //var userEmail = userMailClaim.Value;
-
-        var token = httpContext.Request.Cookies["Authorization"];
-        if (token.Equals(null)) return null;
+        string? token = httpContext.Request.Cookies["Authorization"];
+        if (token == null) return null;
 
         if (!token.StartsWith("Bearer ")) return null;
 

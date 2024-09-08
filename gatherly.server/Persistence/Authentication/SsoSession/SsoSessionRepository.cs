@@ -28,7 +28,7 @@ public class SsoSessionRepository : ISsoSessionRepository
             using (var transaction = session.BeginTransaction())
             {
                 var existingSsoSession = session.Query<Models.Authentication.SsoSession.SsoSession>()
-                    .FirstOrDefault(x => x.UserEmail == email && x.ExpiresAt > DateTime.Now);
+                    .FirstOrDefault(x => x.UserEmail == email && x.ExpiresAt > DateTime.UtcNow);
 
                 if (existingSsoSession != null)
                 {
@@ -42,8 +42,8 @@ public class SsoSessionRepository : ISsoSessionRepository
                     UserId = userId,
                     UserEmail = email,
                     VerificationCode = GenerateVerificationCode(),
-                    CreatedAt = DateTime.Now,
-                    ExpiresAt = DateTime.Now.AddMinutes(10)
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(10)
                 };
 
                 session.Save(ssoSession);
@@ -65,7 +65,7 @@ public class SsoSessionRepository : ISsoSessionRepository
             using (var transaction = session.BeginTransaction())
             {
                 var existingSsoSession = session.Query<Models.Authentication.SsoSession.SsoSession>()
-                    .FirstOrDefault(x => x.UserEmail == email && x.ExpiresAt > DateTime.Now);
+                    .FirstOrDefault(x => x.UserEmail == email && x.ExpiresAt > DateTime.UtcNow);
 
                 if (existingSsoSession != null)
                 {
@@ -79,8 +79,8 @@ public class SsoSessionRepository : ISsoSessionRepository
                     UserId = null,
                     UserEmail = email,
                     VerificationCode = GenerateVerificationCode(),
-                    CreatedAt = DateTime.Now,
-                    ExpiresAt = DateTime.Now.AddMinutes(10)
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(10)
                 };
 
                 session.Save(ssoSession);
@@ -121,7 +121,7 @@ public class SsoSessionRepository : ISsoSessionRepository
                     return false;
                 }
 
-                if (ssoSession.ExpiresAt <= DateTime.Now)
+                if (ssoSession.ExpiresAt <= DateTime.UtcNow)
                 {
                     Console.WriteLine($"SSO session expired at: {ssoSession.ExpiresAt}");
                     return false;
@@ -149,7 +149,7 @@ public class SsoSessionRepository : ISsoSessionRepository
                 var ssoSession = session.Query<Models.Authentication.SsoSession.SsoSession>()
                     .FirstOrDefault(x => x.UserEmail.Equals(email));
                 if (ssoSession != null && ssoSession.VerificationCode.Equals(code)
-                                       && ssoSession.ExpiresAt > DateTime.Now)
+                                       && ssoSession.ExpiresAt > DateTime.UtcNow)
                 {
                     session.Delete(ssoSession);
                     transaction.Commit();

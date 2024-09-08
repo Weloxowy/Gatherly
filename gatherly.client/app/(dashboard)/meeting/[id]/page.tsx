@@ -1,13 +1,21 @@
 ﻿'use client';
 import React, {useEffect, useState} from 'react';
 import {useParams} from 'next/navigation';
-import {getExtendedMeetingById} from '@/lib/meetingDetails/meetingDetails';
 import {ExtendedMeeting} from '@/lib/interfaces/types';
 import classes from "@/app/(dashboard)/meeting/[id]/MeetingComponent.module.css";
-import {Container, Grid, Paper, rem, SimpleGrid, Title} from "@mantine/core";
+import {Button, Container, Grid, Modal, Paper, rem, SimpleGrid, Skeleton, Title} from "@mantine/core";
 import MeetingDetails from "@/components/dashboard/MeetingDetails/MeetingDetails";
 import dynamic from "next/dynamic";
+import InviteIcon from "@/components/widgets/Invite/InviteIcon";
+import '@mantine/dates/styles.css';
+import GetMeeting from "@/lib/widgets/GetMeeting";
+import {useDisclosure} from "@mantine/hooks";
+import dayjs from "dayjs";
+import EditMeeting from "@/components/dashboard/EditMeeting/EditMeeting";
+import ChatWidget from "@/components/widgets/Chat/ChatWidget";
+import {openModal} from "@mantine/modals";
 import InviteWidget from "@/components/widgets/Invite/InviteWidget";
+import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
 
 const MeetingMap = dynamic(() => import('@/components/widgets/MeetingMap/MeetingMapWidget'), {
     ssr: false
@@ -18,54 +26,78 @@ export default function Meeting() {
     const [data, setData] = useState<ExtendedMeeting | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [opened, { open, close }] = useDisclosure(false);
+    const handleOpenModal = () => {
+        openModal({
+            title: <Title order={3}>Zaproś gości</Title>,
+            size: '70%',
+            radius: 10,
+            children: (
+                //@ts-ignore
+                <InviteWidget data={data}/>
+            ),
+        });
+    };
 
     useEffect(() => {
-        if (id) {
-            const meetingId = id.toString();
+        const fetchMeeting = async () => {
+            if (id) {
+                const meetingId = id.toString();
 
-            try {
-                const meeting = getExtendedMeetingById(meetingId);
-                if (meeting) {
-                    setData(meeting);
-                } else {
-                    setError('Meeting not found');
+                try {
+                    setLoading(true); // Ustawienie stanu ładowania na true przed rozpoczęciem fetchowania
+                    const meeting = await GetMeeting(meetingId);
+
+                    if (meeting) {
+                        setData(meeting);
+                    } else {
+                        setError('Meeting not found');
+                    }
+                } catch (err) {
+                    setError('Failed to load');
+                } finally {
+                    setLoading(false); // Zakończenie ładowania
                 }
-            } catch (err) {
-                setError('Failed to load');
-            } finally {
-                setLoading(false);
             }
-        }
+        };
+
+        fetchMeeting();
     }, [id]);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <div>
+        Loading...
+    </div>;
     if (error) return <div>{error}</div>;
 
     return (<div className={classes.whole}>
         <div className={classes.name}>
             <Title order={2}>{data?.name}</Title>
-            <>Spotkanie utworzył: <b>Anna Wiech</b> | 18.03.2024 19:30</>
+
+            <>Spotkanie utworzył(a): <b>{data?.ownerName}</b> | {dayjs(adjustTimeToLocal(//@ts-ignore
+                                                                    data?.creationTime)).format("DD.MM.YYYY")}</>
         </div>
-        <Container my="lg">
+        <Container my="lg" m={0}>
             <SimpleGrid cols={{base: 1, sm: 2}} spacing="md">
                 <Paper radius="lg" shadow="lg" p="lg" style={{height: "100%", width: "100%"}}>
                     {data && <MeetingDetails data={data}/>}
                 </Paper>
                 <Grid gutter="md" w={rem(1000)}>
                     <Grid.Col span={9}>
-                        <Paper radius="lg" shadow="lg" style={{height: "30vh"}}>
-                            {data?.lon != null && data.lat != null ? (<MeetingMap lon={data.lon}
-                                                                                  lat={data.lat}/>) : ('Brak koordynatów. Tu będzie coś innego')}
+                        <Paper radius="lg" shadow="lg" style={{height: "30vh", zIndex: 1}}>
+                            {data?.lon != 0 && //@ts-ignore
+                            data.lat != 0 ? (<MeetingMap lon={data.lon} lat={data.lat}/>) : ('')}
                         </Paper>
                     </Grid.Col>
                     <Grid.Col span={3}>
-                        <Paper radius="lg" shadow="lg" p="lg" style={{height: "30vh"}}>
-                            <InviteWidget/>
+                        <Paper radius="lg" shadow="lg" p="lg" style={{height: "30vh"}} onClick={handleOpenModal}>
+                            <InviteIcon />
                         </Paper>
                     </Grid.Col>
                     <Grid.Col span={12}>
                         <Paper radius="lg" shadow="lg" p="lg" style={{height: "50vh"}}>
-                            chat
+                            {//@ts-ignore
+                                <ChatWidget meetingId={data?.id} />
+                            }
                         </Paper>
                     </Grid.Col>
                 </Grid>

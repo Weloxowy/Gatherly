@@ -12,6 +12,16 @@
     align-items: center;
 }
 
+.head{
+    display: flex;
+    justify-content: space-between; /* Rozdziela elementy maksymalnie */
+    align-items: center; /* Wyrównuje elementy w pionie */
+}
+
+.buttonHead{
+    margin-right: 4rem;
+}
+
 .calendarWrapper {
     width: 100%;
     height: 100%;

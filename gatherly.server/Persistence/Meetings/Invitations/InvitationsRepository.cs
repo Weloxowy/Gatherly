@@ -14,7 +14,7 @@ public class InvitationsRepository : IInvitationsRepository
         _sessionFactory = sessionFactory;
     }
 
-    public async Task<Models.Meetings.Invitations.Invitations> CreateInvitation(InvitationDTOCreate invitation)
+    public async Task<Models.Meetings.Invitations.Invitations> CreateInvitation(InvitationDTO invitation)
     {
         using (var session = _sessionFactory.OpenSession())
         {
@@ -30,7 +30,7 @@ public class InvitationsRepository : IInvitationsRepository
                 {
                     MeetingId = invitation.MeetingId,
                     UserId = invitation.UserId,
-                    ValidTime = DateTime.Now.AddDays(7)
+                    ValidTime = DateTime.UtcNow.AddDays(7)
                 };
                 
                 await session.SaveAsync(newInvitation);
@@ -72,22 +72,66 @@ public class InvitationsRepository : IInvitationsRepository
         }
     }
 
-    public Task<List<Models.Meetings.Invitations.Invitations>> GetAllInvitationsByMeetingId(Guid meetingId)
+    public async Task<List<InvitationDTOGetInvited>> GetAllInvitationsByMeetingId(Guid meetingId)
     {
         using (var session = NHibernateHelper.OpenSession())
         {
-            return session.Query<Models.Meetings.Invitations.Invitations>()
-                .Where(x => x.MeetingId == meetingId).ToListAsync();
+            // Query with join to get invitations and corresponding users
+            var invitations = await session.Query<Models.Meetings.Invitations.Invitations>()
+                .Where(i => i.MeetingId == meetingId).Join(session.Query<Models.Authentication.UserEntity.UserEntity>(), 
+                    invitation => invitation.UserId, 
+                    user => user.Id, 
+                    (invitation, user) => new Entities.Meetings.InvitationDTOGetInvited
+                    {
+                        Id = invitation.Id,
+                        UserId = invitation.UserId,
+                        UserName = user.Name, // Mapping username from the user entity
+                        UserAvatar = user.AvatarName,
+                        MeetingId = invitation.MeetingId,
+                        ValidTime = invitation.ValidTime
+                    })
+                .ToListAsync();
+
+            return invitations;
         }
     }
 
-    public Task<List<Models.Meetings.Invitations.Invitations>> GetAllInvitationsByUserId(Guid userId)
+    public async Task<List<InvitationDTOGetByUser>> GetAllInvitationsByUserId(Guid userId)
     {
         using (var session = NHibernateHelper.OpenSession())
         {
-            return session.Query<Models.Meetings.Invitations.Invitations>()
-                .Where(x => x.UserId == userId).ToListAsync();
+            // Query with join to get invitations and corresponding meeting details
+            var invitations = await session.Query<Models.Meetings.Invitations.Invitations>()
+                .Where(i => i.UserId == userId)
+                .Join(
+                    session.Query<Models.Meetings.Meeting.Meeting>(), // Assuming you have a Meeting entity
+                    invitation => invitation.MeetingId,
+                    meeting => meeting.Id,
+                    (invitation, meeting) => new Entities.Meetings.InvitationDTOGetByUser
+                    {
+                        InvitationId = invitation.Id,
+                        UserId = invitation.UserId,
+                        MeetingId = invitation.MeetingId,
+                        ValidTime = invitation.ValidTime,
+                        OwnerId = meeting.OwnerId,
+                        MeetingName = meeting.MeetingName,
+                        Description = meeting.Description,
+                        PlaceName = meeting.PlaceName,
+                        Lon = meeting.Lon,
+                        Lat = meeting.Lat,
+                        StartOfTheMeeting = meeting.StartOfTheMeeting,
+                        EndOfTheMeeting = meeting.EndOfTheMeeting,
+                        CreationTime = meeting.CreationTime,
+                        IsMeetingTimePlanned = meeting.IsMeetingTimePlanned,
+                        TimeZone = meeting.TimeZone
+                    }
+                )
+                .ToListAsync();
+
+            return invitations;
         }
     }
+
+
     
 }

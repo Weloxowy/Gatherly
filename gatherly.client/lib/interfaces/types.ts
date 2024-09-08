@@ -16,14 +16,14 @@ export interface AuthProps {
 
 //Meetings types
 export interface Meeting {
-    id: number;
+    meetingId: string;
     date: Date;
     name: string;
     place: string;
 }
 
 export interface Person {
-    id: string;
+    personId: string;
     name: string;
     avatar: string;
 }
@@ -34,7 +34,7 @@ export interface AuthReturn{
 }
 
 export interface Meeting {
-    id: number;
+    meetingId: string;
     date: Date;
     name: string;
     place: string;
@@ -42,8 +42,12 @@ export interface Meeting {
 
 export interface ExtendedMeeting {
     id: string;
-    date: Date;
-    dateOfCreation: Date;
+    ownerId: string,
+    ownerName: string,
+    startOfTheMeeting: Date;
+    endOfTheMeeting: Date;
+    creationTime: Date,
+    isMeetingTimePlanned : boolean;
     desc: string;
     name: string;
     placeName: string;
@@ -52,4 +56,38 @@ export interface ExtendedMeeting {
     confirmedInvites : Person[];
     sendInvites : Person[];
     rejectedInvites : Person[];
+    isRequestingUserAnOwner : boolean;
+}
+
+export interface AddressInfo {
+    lon? : number,
+    lat?: number,
+    name : string,
+}
+
+export interface Invitation{
+    id: string,
+    userId : string,
+    meetingId : string,
+    validTime: Date
+}
+
+export interface InvitationMeeting{
+    InvitationId: string,
+    userId : string,
+    meetingId : string,
+    validTime: Date
+    OwnerId: string,
+    MeetingName: string,
+    Description: string,
+    PlaceName: string,
+    StartOfTheMeeting: Date,
+    EndOfTheMeeting: Date,
+    TimeZone: string;
+}
+
+export interface UserInfo{
+    name : string,
+    email : string,
+    avatarName : string
 }

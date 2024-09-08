@@ -16,6 +16,7 @@ public class MeetingMapping : ClassMap<Meeting>
         Map(x => x.Lat);
         Map(x => x.StartOfTheMeeting);
         Map(x => x.EndOfTheMeeting);
+        Map(x => x.CreationTime);
         Map(x => x.IsMeetingTimePlanned);
         Map(x => x.TimeZone).CustomType<TimeZoneType>();
     }

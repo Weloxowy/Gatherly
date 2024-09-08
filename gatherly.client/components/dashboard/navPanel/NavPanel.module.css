@@ -1,10 +1,9 @@
 ﻿.navbar {
-    height: 100vh;
+    height: 90vh;
     width: 14vw;
     padding: var(--mantine-spacing-lg);
     display: flex;
     flex-direction: column;
-    border-right: 2px solid light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-4));
     background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), rgba(255,255,255,0.4));
     backdrop-filter: blur(25px);
 }
@@ -14,9 +13,11 @@
 }
 
 .header {
-    padding-bottom: var(--mantine-spacing-lg);
     margin-bottom: calc(var(--mantine-spacing-lg) * 1.5);
     border-bottom: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+    align-items: center;
+    align-content: center;
+    align-self: center;
 }
 
 .footer {

@@ -1,4 +1,5 @@
-﻿import QRCode from 'qrcode';
+﻿//@ts-ignore
+import QRCode from 'qrcode';
 
 export async function qrGenerator(url: string) {
     try {

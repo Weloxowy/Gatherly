@@ -1,6 +1,10 @@
 ﻿.whole{
     padding: var(--mantine-spacing-lg);
     padding-left: 4rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+    z-index: -1;
 }
 
 .name{

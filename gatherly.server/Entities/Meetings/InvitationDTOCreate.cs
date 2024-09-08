@@ -2,6 +2,6 @@
 
 public class InvitationDTOCreate
 {
-    public virtual Guid UserId { get; set; }
+    public virtual string UserEmail { get; set; }
     public virtual Guid MeetingId { get; set; }
 }

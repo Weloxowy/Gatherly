@@ -256,7 +256,7 @@ public class AuthenticationController : ControllerBase
         if (refreshTokenHeader != null)
         {
             var refreshToken = refreshTokenHeader.Trim();
-            _blacklistTokenService.AddToBlacklist(refreshToken, user.Id, DateTime.Now.AddHours(2));
+            _blacklistTokenService.AddToBlacklist(refreshToken, user.Id, DateTime.UtcNow.AddHours(2));
             _refreshTokenService.RevokeRefreshToken(refreshToken);
             Response.Cookies.Delete("RefreshToken");
         }

@@ -116,12 +116,22 @@ public class UserMeetingRepository : IUserMeetingRepository
             return users;
         }
     }
+    
+    public async Task<Models.Meetings.UserMeeting.UserMeeting> GetInviteByIds(Guid meetingId, Guid userId)
+    {
+        using (var session = _sessionFactory.OpenSession())
+        {
+            return await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
+                .Where(x => x.MeetingId == meetingId && x.UserId == userId)
+                .FirstOrDefaultAsync();
+        }
+    }
 
     public async Task<int> CountAllMeetingsByUserId(Guid userId)
     {
         using (var session = _sessionFactory.OpenSession())
         {
-            var today = DateTime.Now.Date;
+            var today = DateTime.UtcNow.Date;
 
             var meetingsList = await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
                 .Where(x => x.UserId == userId)
@@ -140,15 +150,18 @@ public class UserMeetingRepository : IUserMeetingRepository
     {
         using (var session = _sessionFactory.OpenSession())
         {
-            var today = DateTime.Now.Date;
+            var today = DateTime.UtcNow.Date;
 
             var meetingsList = await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
                 .Where(x => x.UserId == userId)
-                .Join(session.Query<Models.Meetings.Meeting.Meeting>(),
-                    userSession => userSession.MeetingId,
-                    meetingSession => meetingSession.Id,
-                    (userSession, meetingSession) => meetingSession)
-                .Where(meeting => meeting.StartOfTheMeeting.Date > today)
+                .Join(
+                    session.Query<Models.Meetings.Meeting.Meeting>(),   // Druga tabela
+                    userMeeting => userMeeting.MeetingId,               // Klucz obcy w UserMeeting
+                    meeting => meeting.Id,                              // Klucz główny w Meeting
+                    (userMeeting, meeting) => new { UserMeeting = userMeeting, Meeting = meeting } // Nowy anonimowy typ
+                )
+                // Filtrujemy na podstawie daty
+                .Select(x => x.Meeting)                                // Wybieramy tylko spotkania
                 .ToListAsync();
 
             var meetingDTOList = meetingsList.Select(meeting => new MeetingDTOInfo

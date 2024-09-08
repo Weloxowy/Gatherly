@@ -1,4 +1,4 @@
-﻿import axiosInstance from "@/lib/AxiosInstance";
+﻿import axiosInstance from "@/lib/utils/AxiosInstance";
 
 
 async function logoutUser() {
@@ -9,6 +9,9 @@ async function logoutUser() {
         return response.data;
     } catch (error) {
         throw error;
+    }
+    finally {
+        window.location.href= "/";
     }
 }
 

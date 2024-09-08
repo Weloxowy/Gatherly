@@ -16,4 +16,5 @@ public interface IUserMeetingService
     public Task<UserMeeting> ChangeAvailbilityTimeFrames(Guid meetingId, int offset);
     public Task<int> CountAllMeetingsByUserId(Guid userId);
     public Task<List<MeetingDTOInfo>> GetAllMeetingsByUserId(Guid userId);
+    public Task<UserMeeting> GetInviteByIds(Guid meetingId, Guid userId);
 }

@@ -1,25 +1,35 @@
 ﻿.main {
     padding: var(--mantine-spacing-lg);
-    padding-left: 4rem;
+    margin-left: 4rem;
+}
+
+.buttonHead{
+    margin-right: 4rem;
+}
+
+.head{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .title {
     display: flex;
-    align-items: center; /* Dodane aby ikonka i tytuł były w jednej linii */
+    align-items: center;
     font-size: 1.5rem;
-    margin-bottom: 1.5rem; /* Dodano margin-bottom */
+    margin-bottom: 1.5rem;
     left: 0;
 }
 
 .icon {
     background-color: var(--mantine-primary-color-7);
     border-radius: var(--mantine-spacing-xl);
-    padding: 8px; /* Dodano padding aby ikonka była bardziej widoczna */
-    margin-right: 10px; /* Dodano odstęp między ikoną a tekstem */
+    padding: 8px;
+    margin-right: 10px;
 }
 
 .name {
-    padding-left: 1rem;
+    padding-left: 0rem;
 }
 
 .componentRect {
@@ -55,7 +65,7 @@
 .componentLg {
     display: flex;
     flex-direction: column;
-    height: 28vh; /* Ustalona wysokość całego komponentu */
+    height: 28vh;
     width: 50vw;
     position: relative;
     padding: 20px;
@@ -65,7 +75,7 @@
     display: flex;
     flex-direction: column;
     width: 75vw;
-    height: 28vh; /* Ustalona wysokość całego komponentu */
+    height: 28vh;
     position: relative;
     padding: 20px;
 }
@@ -129,4 +139,32 @@
     left: 75%;
     top: 75%;
     animation-duration: 30s;
+}
+
+h1.responsiveTitle {
+    font-size: 9rem;
+}
+
+@media (max-width: 1200px) {
+    h1.responsiveTitle {
+        font-size: 6rem;
+    }
+}
+
+@media (max-width: 992px) {
+    h1.responsiveTitle {
+        font-size: 4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    h1.responsiveTitle {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 576px) {
+    h1.responsiveTitle {
+        font-size: 2rem;
+    }
 }

@@ -7,7 +7,7 @@ public class InvitationsService : IInvitationsService
 {
     private readonly InvitationsRepository _invitationsRepository = new(NHibernateHelper.SessionFactory);
     
-    public Task<Models.Meetings.Invitations.Invitations> CreateInvitation(InvitationDTOCreate invitation)
+    public Task<Models.Meetings.Invitations.Invitations> CreateInvitation(InvitationDTO invitation)
     {
       return _invitationsRepository.CreateInvitation(invitation);
     }
@@ -17,12 +17,12 @@ public class InvitationsService : IInvitationsService
         return _invitationsRepository.GetInvitationById(invitationId);
     }
 
-    public Task<List<Models.Meetings.Invitations.Invitations>> GetAllInvitationsByMeetingId(Guid meetingId)
+    public Task<List<InvitationDTOGetInvited>> GetAllInvitationsByMeetingId(Guid meetingId)
     {
         return _invitationsRepository.GetAllInvitationsByMeetingId(meetingId);
     }
 
-    public Task<List<Models.Meetings.Invitations.Invitations>> GetAllInvitationsByUserId(Guid userId)
+    public Task<List<InvitationDTOGetByUser>> GetAllInvitationsByUserId(Guid userId)
     {
         return _invitationsRepository.GetAllInvitationsByUserId(userId);
     }

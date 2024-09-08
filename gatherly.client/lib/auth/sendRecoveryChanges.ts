@@ -1,4 +1,4 @@
-﻿import axiosInstance from '@/lib/AxiosInstance';
+﻿import axiosInstance from '@/lib/utils/AxiosInstance';
 
 async function sendRecoveryChanges(email: string, password: string) {
 

@@ -1,4 +1,5 @@
-﻿using gatherly.server.Models.Tokens.RefreshToken;
+﻿using System.Diagnostics.CodeAnalysis;
+using gatherly.server.Models.Tokens.RefreshToken;
 using Microsoft.EntityFrameworkCore;
 using NHibernate;
 
@@ -31,7 +32,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
                 Id = Guid.NewGuid(),
                 Token = Guid.NewGuid().ToString(),
                 UserId = userId,
-                Expiration = DateTime.Now.AddMinutes(60),
+                Expiration = DateTime.UtcNow.AddMinutes(60),
                 IsRevoked = false
             };
 
@@ -47,6 +48,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     /// </summary>
     /// <param name="token">The refresh token string.</param>
     /// <returns>The refresh token if found and not revoked; otherwise, null.</returns>
+    [SuppressMessage("ReSharper.DPA", "DPA0008: Large number of DB connections", MessageId = "count: 16")]
     public Models.Tokens.RefreshToken.RefreshToken? GetRefreshToken(string token)
     {
         try

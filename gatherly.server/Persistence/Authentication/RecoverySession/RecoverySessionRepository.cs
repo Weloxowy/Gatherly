@@ -30,7 +30,7 @@ public class RecoverySessionRepository : IRecoverySessionRepository
                     {
                         UserId = userId,
                         IsOpened = false,
-                        ExpiryDate = DateTime.Now.AddMinutes(10)
+                        ExpiryDate = DateTime.UtcNow.AddMinutes(10)
                     };
 
                     session.Save(newRecoverySession);

@@ -1,5 +1,5 @@
 ﻿"use client"
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Avatar, Group, rem, Text, Title, UnstyledButton} from '@mantine/core';
 import {
     IconHome2,
@@ -10,18 +10,62 @@ import {
     IconUsersGroup,
 } from '@tabler/icons-react';
 import classes from './NavPanel.module.css';
-import {cabinet} from "@/app/fonts";
 import Link from "next/link";
+import LogoutUser from "@/lib/auth/logoutUser";
+import JwtTokenValid from "@/lib/auth/GetUserInfo";
+import {UserInfo} from "@/lib/interfaces/types";
 
 const data = [
     {link: '/home/', label: 'Home', icon: IconHome2},
     {link: '/meetings/', label: 'Spotkania', icon: IconUsersGroup},
-    {link: '', label: 'Zaproszenia', icon: IconMail},
+    {link: '/invitations', label: 'Zaproszenia', icon: IconMail},
     {link: '/reminders/', label: 'Przypomnienia', icon: IconListCheck},
 ];
 
 const NavPanel = () => {
-    const [active, setActive] = useState('Home');
+    const [active, setActive] = useState('');
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Dodanie stanu userInfo
+
+    useEffect(() => {
+        // IIFE to extract the last part of the URL and compare with the data array
+        (function() {
+            // Get the current URL path
+            const currentPath = window.location.pathname;
+
+            // Extract the last part of the path
+            const lastSegment = currentPath.split('/').filter(Boolean).pop(); // filters empty strings
+
+            // Find a matching item in the `data` array
+            const matchedItem = data.find(item => {
+                const itemPath = item.link.replace(/\//g, ''); // Remove slashes for comparison
+                return itemPath === lastSegment;
+            });
+
+            // If a match is found, set the active state to its label
+            if (matchedItem) {
+                setActive(matchedItem.label);
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        // Ustaw dane użytkownika w zmiennej
+        const fetchUserInfo = async () => {
+            const x = await JwtTokenValid();
+            if (x) {
+                setUserInfo({
+                    name: x.name,
+                    email: x.email,
+                    avatarName: x.avatarName,
+                });
+            }
+        };
+        fetchUserInfo();
+    }, []);
+
+    if (!userInfo) {
+        return null;
+    }
 
     const links = data.map((item) => (
         <Link
@@ -30,7 +74,6 @@ const NavPanel = () => {
             href={item.link}
             key={item.label}
             onClick={(event) => {
-                //event.preventDefault();
                 setActive(item.label);
             }}
         >
@@ -40,42 +83,36 @@ const NavPanel = () => {
     ));
 
     return (
-        <nav className={classes.navbar}>
+        <div className={classes.navbar}>
             <div className={classes.navbarMain}>
-                <Group className={classes.header} justify="space-between">
-                    <Title className={cabinet.className} size={rem(32)} pl={rem(16)}>
-                        Gatherly
-                    </Title>
-
-                </Group>
                 {links}
             </div>
 
             <div className={classes.footer}>
                 <UnstyledButton>
                 <Group p={rem(10)}>
-                    <Avatar radius="xl" size="lg" src="/avatars/avatar13.png" ></Avatar>
+                    <Avatar radius="xl" size="lg" src={"/avatars/"+ userInfo.avatarName +".png"} ></Avatar>
                     <div style={{flex: 1}}>
                         <Text size="lg" fw={500}>
-                            Anna Wiech
+                            {userInfo.name}
                         </Text>
                         <Text c="dimmed" size="sm">
-                            awiech@wp.pl
+                            {userInfo.email}
                         </Text>
                     </div>
                 </Group>
             </UnstyledButton>
-                <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
+                <a href="/settings" className={classes.link}>
                     <IconSettings className={classes.linkIcon} stroke={1.5}/>
                     <span>Ustawienia</span>
                 </a>
 
-                <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
+                <a className={classes.link} onClick={(event) => LogoutUser()}>
                     <IconLogout className={classes.linkIcon} stroke={1.5}/>
                     <span>Wyloguj się</span>
                 </a>
             </div>
-        </nav>
+        </div>
 
     )
 }

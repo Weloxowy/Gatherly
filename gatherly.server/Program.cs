@@ -6,6 +6,7 @@ using gatherly.server;
 using gatherly.server.Models.Authentication.RecoverySession;
 using gatherly.server.Models.Authentication.SsoSession;
 using gatherly.server.Models.Authentication.UserEntity;
+using gatherly.server.Models.Chat.Chat;
 using gatherly.server.Models.Mailing.MailEntity;
 using gatherly.server.Models.Meetings.Invitations;
 using gatherly.server.Models.Meetings.Meeting;
@@ -16,6 +17,7 @@ using gatherly.server.Models.Tokens.TokenEntity;
 using gatherly.server.Persistence.Authentication.RecoverySession;
 using gatherly.server.Persistence.Authentication.SsoSession;
 using gatherly.server.Persistence.Authentication.UserEntity;
+using gatherly.server.Persistence.Chat;
 using gatherly.server.Persistence.Mailing;
 using gatherly.server.Persistence.Mailing.EmailTemplates;
 using gatherly.server.Persistence.Meetings.Invitations;
@@ -48,15 +50,18 @@ builder.Services.AddScoped<IRecoverySessionService, RecoverySessionService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IUserMeetingService, UserMeetingService>();
 builder.Services.AddScoped<IInvitationsService, InvitationsService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+
 
 // Add controllers and endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSignalR();
 
 // Konfiguracja Swaggera
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gatherly API", Version = "v1.1" });
     c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,
         $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 
@@ -210,16 +215,21 @@ else
 app.Use(async (context, next) =>
 {
     var token = context.Request.Cookies["Authorization"];
-    if (!string.IsNullOrEmpty(token) && token.StartsWith("Bearer "))
-    {
-        context.Request.Headers["Authorization"] = token;
-    }
+    if (!string.IsNullOrEmpty(token) && token.StartsWith("Bearer ")) context.Request.Headers["Authorization"] = token;
     await next();
 });
 
 app.UseCors("AllowSpecificOrigin");
 app.UseDefaultFiles();
-app.UseStaticFiles();
+
+app.UseHttpsRedirection();
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -228,14 +238,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-
-app.MapControllers();
-app.MapFallbackToFile("/index.html");
 
 app.Run();
 

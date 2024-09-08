@@ -67,4 +67,9 @@ public class UserMeetingService : IUserMeetingService
     {
         return _userMeetingRepository.GetAllMeetingsByUserId(userId);
     }
+
+    public Task<Models.Meetings.UserMeeting.UserMeeting> GetInviteByIds(Guid meetingId, Guid userId)
+    {
+        return _userMeetingRepository.GetInviteByIds(meetingId, userId);
+    }
 }
