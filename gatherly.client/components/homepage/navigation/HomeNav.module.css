@@ -1,35 +1,54 @@
-﻿.header {
-    height: rem(56px);
-    margin-bottom: rem(120px);
+﻿.logo {
+    color: var(--mantine-color-dark-6);
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 72px;
     background-color: transparent;
-    font-family: var(--font-satoshi);
     padding-top: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.header.lightText {
+    color: white; /* Upewnij się, że kolor jest poprawny */
+}
+
+.header.darkText {
+    color: black; /* Ciemny tekst, gdy przekroczono próg scrolla */
 }
 
 .inner {
-    height: rem(56px);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: var(--font-satoshi);
 }
 
 .link {
     display: block;
-    line-height: 1;
-    padding: rem(8px) rem(12px);
-    border-radius: var(--mantine-radius-sm);
+    padding: 8px 12px;
     text-decoration: none;
-    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+    color: white;
     font-size: var(--mantine-font-size-sm);
     font-weight: 500;
+    transition: color 0.3s ease-in-out;
+}
 
-    @mixin hover {
-        background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
-    }
+.link:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* Ulepszony efekt hover */
+}
 
-    [data-mantine-color-scheme] &[data-active] {
-        font-weight: bolder;
-        padding: 0.4rem;
-    }
+.activeLink {
+    font-weight: bold;
+}
+
+.darkText .link {
+    color: black; /* Kiedy tekst nagłówka jest ciemny, zmień też kolor linków */
+}
+
+.lightText .link {
+    color: white; /* Kiedy tekst nagłówka jest jasny, linki również jasne */
 }

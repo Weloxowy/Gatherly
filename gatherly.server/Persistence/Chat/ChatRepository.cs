@@ -29,7 +29,6 @@ public class ChatRepository : IChatRepository
     {
         using (var session = _sessionFactory.OpenSession())
         {
-            // Pobierz wiadomości, posortowane malejąco według timestamp i wybierz 20 najnowszych
             var messages = await session.Query<Message>()
                 .Where(m => m.MeetingId == meetingId)
                 .OrderByDescending(m => m.Timestamp)
@@ -37,9 +36,8 @@ public class ChatRepository : IChatRepository
                     message => message.SenderId,
                     userEntity => userEntity.Id,
                     (message, userEntity) => new { Message = message, UserEntity = userEntity })
-                .Take(20)
+                .Take(100)
                 .ToListAsync();
-            // Odwróć listę, aby była posortowana rosnąco według timestamp
             messages.Reverse();
             var list = new List<MessagesDTO>();
             foreach (var message in messages)
@@ -79,6 +77,23 @@ public class ChatRepository : IChatRepository
                 .OrderBy(m => m.Timestamp)
                 .Take(count)
                 .ToListAsync();
+        }
+    }
+    
+    public async Task SaveSystemMessageAsync(Guid meetingId, string text)
+    {
+        using (var session = _sessionFactory.OpenSession())
+        using (var transaction = session.BeginTransaction())
+        {
+            Message message = new Message()
+            {
+                Content = text,
+                MeetingId = meetingId,
+                SenderId = Guid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"),
+                Timestamp = DateTime.UtcNow
+            };
+            await session.SaveAsync(message);
+            await transaction.CommitAsync();
         }
     }
 }

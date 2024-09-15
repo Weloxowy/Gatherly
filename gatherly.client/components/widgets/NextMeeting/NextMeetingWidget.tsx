@@ -8,10 +8,10 @@ import 'dayjs/locale/pl';
 dayjs.locale('pl');
 import GetNextMeetingUsers from "@/lib/widgets/NextMeeting/GetNextMeetingUsers";
 import Link from "next/link";
-import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
 import { openModal } from "@mantine/modals";
 import NewMeeting from "@/components/dashboard/NewMeeting/NewMeeting";
 import { IconCalendarPlus } from "@tabler/icons-react";
+import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
 
 const NextMeetingWidget: React.FC = () => {
     const [meeting, setMeeting] = useState<Meeting | null>(null); // Zmieniony typ na Meeting | null
@@ -75,13 +75,13 @@ const NextMeetingWidget: React.FC = () => {
                     <Title order={1}>{meeting.name}</Title>
                     <Grid>
                         <Grid.Col span={7}>
-                            <Text size={rem(20)}>{dayjs(adjustTimeToLocal(meeting.date)).format('D MMMM')}</Text>
+                            <Text size={rem(20)}>{dayjs(adjustTimeToLocal(meeting.date,meeting.timezoneOffset)).format('D MMMM')}</Text>
                             <Text size={rem(20)}>
-                                (za {dayjs(adjustTimeToLocal(meeting.date)).diff(dayjs(), 'day')} dni)
+                                (za {dayjs(adjustTimeToLocal(meeting.date,meeting.timezoneOffset)).diff(dayjs(), 'day')} dni)
                             </Text>
                         </Grid.Col>
                         <Grid.Col span={4}>
-                            <Text size={rem(40)}>{dayjs(adjustTimeToLocal(meeting.date)).format('HH:mm')}</Text>
+                            <Text size={rem(40)}>{dayjs(adjustTimeToLocal(meeting.date,meeting.timezoneOffset)).format('HH:mm')}</Text>
                         </Grid.Col>
                     </Grid>
                     <div>

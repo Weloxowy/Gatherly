@@ -3,8 +3,6 @@ import { Button, Checkbox, Group, ScrollArea, TextInput, Transition } from "@man
 import classes from './NotesWidget.module.css';
 import NotesGet from "@/lib/widgets/Notes/NotesGet";
 import NotesPost from "@/lib/widgets/Notes/NotesPost";
-
-// Poprawiony interfejs
 interface Note {
     Id: string;
     Text: string;
@@ -14,13 +12,14 @@ interface Note {
 const NotesWidget = () => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [newNoteText, setNewNoteText] = useState<string>("");
-    const notesRef = useRef<Note[]>(notes); // Referencja do aktualnych notatek
+    const notesRef = useRef<Note[]>(notes);
 
     // Pobieranie notatek
     useEffect(() => {
         const fetchNotes = async () => {
             try {
                 const response = await NotesGet();
+                //console.log("Odpowiedź z serwera:", response);
 
                 // Sprawdzamy, czy odpowiedź zawiera oczekiwane dane
                 if (response && response.Notes && Array.isArray(response.Notes.Note)) {
@@ -28,49 +27,44 @@ const NotesWidget = () => {
                     const fetchedNotes = response.Notes.Note.map((note: any) => ({
                         Id: note.Id,
                         Text: note.Text,
-                        Checked: note.Checked ?? false // Ustawia domyślną wartość `false`, jeśli `Checked` jest `null` lub `undefined`
+                        Checked: note.Checked ?? false
                     }));
                     setNotes(fetchedNotes);
-                    notesRef.current = fetchedNotes; // Aktualizujemy referencję
+                    notesRef.current = fetchedNotes;
                 } else {
-                    console.error("Niepoprawny format danych", response);
+                    //console.error("Niepoprawny format danych", response);
                 }
             } catch (error) {
-                console.error("Failed to get notes for logged user", error);
+                //console.error("Failed to get notes for logged user", error);
             }
         };
 
         fetchNotes();
     }, []);
 
-    // Wysyłanie notatek przy odmontowywaniu komponentu
     useEffect(() => {
         const sendNotes = async () => {
-            if (notesRef.current.length === 0) {
-                return; // Nie wysyłaj pustych notatek
-            }
-
             try {
                 const jsonData = JSON.stringify({
                     Notes: {
                         Note: notesRef.current.map(({ Id, Text, Checked }) => ({ Id, Text, Checked }))
                     }
                 });
+
+                //console.log("Sending JSON data to backend:", jsonData);
                 await NotesPost(jsonData);
             } catch (error) {
-                console.error("Failed to put notes for logged user", error);
+                //console.error("Failed to put notes for logged user", error);
             }
         };
-
-        // Funkcja czyszcząca wywołująca sendNotes
         return () => {
+           //console.log("Wykonuję sendNotes przy odmontowywaniu komponentu");
             sendNotes();
         };
-    }, []); // Teraz `sendNotes` jest wywoływane tylko podczas odmontowywania komponentu
+    }, [notes]);
 
     const handleAdd = () => {
         if (newNoteText.trim() !== "") {
-            // Generowanie ID na podstawie długości tablicy
             const newId = (notes.length > 0 ? (parseInt(notes[notes.length - 1].Id) + 1).toString() : "1");
 
             setNotes((prevNotes) => {
@@ -78,7 +72,7 @@ const NotesWidget = () => {
                     ...prevNotes,
                     { Id: newId, Text: newNoteText, Checked: false },
                 ];
-                notesRef.current = updatedNotes; // Aktualizujemy referencję
+                notesRef.current = updatedNotes;
                 return updatedNotes;
             });
             setNewNoteText("");
@@ -103,35 +97,23 @@ const NotesWidget = () => {
                                         radius={"xl"}
                                         checked={note.Checked}
                                         onChange={() => {
-                                            // Najpierw zmieniamy Checked na true
                                             setNotes(prevNotes => {
                                                 const updatedNotes = prevNotes.map(n =>
                                                     n.Id === note.Id ? { ...n, Checked: true } : n
                                                 );
 
-                                                notesRef.current = updatedNotes; // Aktualizujemy referencję do notatek
+                                                notesRef.current = updatedNotes;
                                                 return updatedNotes;
                                             });
-
-                                            // Po 2 sekundach usuwamy notatkę
                                             setTimeout(() => {
                                                 setNotes(prevNotes => {
                                                     const updatedNotes = prevNotes.filter(n => n.Id !== note.Id);
 
-                                                    notesRef.current = updatedNotes; // Aktualizujemy referencję do notatek
+                                                    notesRef.current = updatedNotes;
                                                     return updatedNotes;
                                                 });
-                                            }, 2000); // 2 sekundy opóźnienia
+                                            }, 2000);
                                         }}
-                                        /* //WERSJA CHOWAJĄCA NOTATKI
-                                        onChange={() => setNotes(prevNotes => {
-                                            const updatedNotes = prevNotes.map(n =>
-                                                n.Id === note.Id ? { ...n, Checked: !n.Checked } : n
-                                            );
-                                            notesRef.current = updatedNotes; // Aktualizujemy referencję
-                                            return updatedNotes;
-                                        })}
-                                        */
                                         label={note.Text}
                                         styles={{ label: { textDecoration: note.Checked ? 'line-through' : 'none' } }}
                                     />

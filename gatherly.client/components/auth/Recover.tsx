@@ -10,7 +10,7 @@ const Recover: React.FC<AuthProps> = ({setAuthMethod, options}) => {
         initialValues: {
             email: '',
         }, validate: {
-            email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'),
+            email: (value) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) ? null : 'Nieprawidłowy adres email'),
         },
     });
 

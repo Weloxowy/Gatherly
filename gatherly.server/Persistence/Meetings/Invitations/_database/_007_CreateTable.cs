@@ -16,7 +16,7 @@ public class _007_CreateTable : Migration
                 .WithColumn(nameof(Models.Meetings.Invitations.Invitations.UserId)).AsGuid().NotNullable()
                 .WithColumn(nameof(Models.Meetings.Invitations.Invitations.MeetingId)).AsGuid().NotNullable()
                 .WithColumn(nameof(Models.Meetings.Invitations.Invitations.ValidTime)).AsDateTime()
-                .NotNullable(); // assuming ValidTime is DateTime
+                .NotNullable();
             Create.ForeignKey("FK_Invitations_User")
                 .FromTable("Invitations").ForeignColumn("UserId")
                 .ToTable("UserEntity").PrimaryColumn("Id");

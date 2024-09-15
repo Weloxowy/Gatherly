@@ -26,8 +26,6 @@ public class UserMeetingRepository : IUserMeetingRepository
 
         int totalSlots = (int)(meeting.EndOfTheMeeting - meeting.StartOfTheMeeting).TotalMinutes / 15;
         var availabilityCounts = new int[totalSlots];
-
-        // Aggregate availability
         foreach (var user in userList)
         {
             for (int i = 0; i < totalSlots; i++)
@@ -46,8 +44,6 @@ public class UserMeetingRepository : IUserMeetingRepository
         }
 
         var commonAvailabilityList = new List<AvailabilityTimes>();
-
-        // Find continuous availability slots
         for (int i = 0; i < totalSlots;)
         {
             if (availabilityCounts[i] > 1)
@@ -271,8 +267,9 @@ public class UserMeetingRepository : IUserMeetingRepository
             using (var transaction = session.BeginTransaction())
             {
                 var meeting = session.Get<Models.Meetings.Meeting.Meeting>(userMeetingDtoCreate.MeetingId);
-                var byteLength = (meeting.EndOfTheMeeting - meeting.StartOfTheMeeting).TotalMinutes / 15;
-                var availability = new byte[(int)byteLength];
+                var totalHours = (meeting.EndOfTheMeeting - meeting.StartOfTheMeeting).TotalHours;
+                //var byteLength = (int)Math.Ceiling(totalHours);
+                var availability = new byte[(int)totalHours];
                 
                 var userMeeting = new Models.Meetings.UserMeeting.UserMeeting
                 {
@@ -312,6 +309,33 @@ public class UserMeetingRepository : IUserMeetingRepository
             }
         }
     }
+    
+    public async Task<Guid?> GetUserMeetingId(Guid userId, Guid meetingId)
+    {
+        using (var session = NHibernateHelper.OpenSession())
+        {
+            var userMeeting = await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
+                .Where(x => x.MeetingId == meetingId && x.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            if (userMeeting == null) return null;
+            return userMeeting.Id;
+        }
+    }
+
+    public async Task<InvitationStatus?> GetUserMeetingStatus(Guid userId, Guid meetingId)
+    {
+        using (var session = NHibernateHelper.OpenSession())
+        {
+            var userMeeting = await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
+                .Where(x => x.MeetingId == meetingId && x.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            if (userMeeting == null) return null;
+            return userMeeting.Status;
+        }
+    }
+    
    public async Task<Models.Meetings.UserMeeting.UserMeeting> ChangeInvitationStatus(Guid userMeetingId, InvitationStatus status)
     {
         using(var session = NHibernateHelper.OpenSession())
@@ -327,7 +351,6 @@ public class UserMeetingRepository : IUserMeetingRepository
                     await session.UpdateAsync(userMeeting);
                     await transaction.CommitAsync();
                     return userMeeting;
-
                 }
                 catch
                 {
@@ -436,5 +459,14 @@ public class UserMeetingRepository : IUserMeetingRepository
             }
         }
     }
+    }
+    
+    public async Task<bool> IsUserInMeeting(Guid userId, Guid meetingId)
+    {
+        using (var session = _sessionFactory.OpenSession())
+        {
+            return await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
+                .AnyAsync(x => x.UserId == userId && x.MeetingId == meetingId);
+        }
     }
 }

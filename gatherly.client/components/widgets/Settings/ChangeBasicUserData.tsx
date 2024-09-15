@@ -1,5 +1,5 @@
 ﻿import React, {useEffect, useState} from "react";
-import {Avatar, Button, Paper, rem, Space, Text, TextInput, useMantineTheme} from "@mantine/core";
+import {Avatar, Button, Group, Paper, rem, Space, Text, TextInput, useMantineTheme} from "@mantine/core";
 import { closeAllModals } from "@mantine/modals";
 import UpdateUserData from "@/lib/widgets/Settings/UpdateUserData";
 import {UserInfo} from "@/lib/interfaces/types";
@@ -41,7 +41,7 @@ const ChangeBasicUserData = () => {
 
         if (!name) validationErrors.name = "Nazwa użytkownika jest wymagana";
         if (!email) validationErrors.email = "Adres email jest wymagany";
-        if (!email.match(/^\S+@\S+\.+\S{2}/)) validationErrors.email = "Podany adres jest nieprawidłowy";
+        if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/)) validationErrors.email = "Podany adres jest nieprawidłowy";
         if (!avatar) validationErrors.avatar = "Należy wybrać avatar";
 
         if (Object.keys(validationErrors).length > 0) {
@@ -111,8 +111,10 @@ const ChangeBasicUserData = () => {
                 {errors.avatar && <Text color="red">{errors.avatar}</Text>}
             </Paper>
             <Space h="md"/>
+            <Group m="lg" ml="0">
             <Button onClick={handleSubmit} loading={loading}>Zatwierdź zmiany</Button>
             <Button variant="outline" color="red" onClick={handleRejectChanges} loading={loading}>Odrzuć zmiany</Button>
+            </Group>
         </>
     );
 };

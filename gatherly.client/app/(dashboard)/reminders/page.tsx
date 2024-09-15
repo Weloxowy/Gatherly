@@ -12,8 +12,10 @@ export default function Reminders() {
             </div>
         <div style={{
             position: 'relative',
+            paddingTop: '1rem',
+            paddingLeft: '1rem',
             width: '70vw',
-            height: 'calc(100vh - 5rem)',
+            height: 'calc(100vh - 10rem)',
             zIndex: 10,
             display: 'flex',
             flexDirection: 'column'

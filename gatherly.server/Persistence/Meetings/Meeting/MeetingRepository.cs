@@ -19,18 +19,12 @@ public class MeetingRepository : IMeetingRepository
         {
             using (var transaction = session.BeginTransaction())
             {
-                // Correctly set the DateTimeKind
                 var startOfTheMeeting = DateTime.SpecifyKind(meetingDto.StartOfTheMeeting, DateTimeKind.Unspecified);
                 var endOfTheMeeting = DateTime.SpecifyKind(meetingDto.EndOfTheMeeting, DateTimeKind.Unspecified);
-
-                // Retrieve the timezone
                 var timezone = TimeZoneInfo.FindSystemTimeZoneById(meetingDto.TimeZone);
-
-                // Convert the DateTime to UTC using the specified timezone
                 var startUtc = TimeZoneInfo.ConvertTimeToUtc(startOfTheMeeting, timezone);
                 var endUtc = TimeZoneInfo.ConvertTimeToUtc(endOfTheMeeting, timezone);
 
-                // Create the meeting entity
                 var meeting = new Models.Meetings.Meeting.Meeting
                 {
                     Id = Guid.NewGuid(),
@@ -47,7 +41,6 @@ public class MeetingRepository : IMeetingRepository
                     CreationTime = DateTime.UtcNow
                 };
 
-                // Save the meeting and commit the transaction
                 await session.SaveAsync(meeting);
                 await transaction.CommitAsync();
 
@@ -62,8 +55,6 @@ public class MeetingRepository : IMeetingRepository
         using (var session = _sessionFactory.OpenSession())
         {
             var meeting = await session.GetAsync<Models.Meetings.Meeting.Meeting>(meetingId);
-            meeting.StartOfTheMeeting = TimeZoneInfo.ConvertTimeFromUtc(meeting.StartOfTheMeeting, meeting.TimeZone);
-            meeting.EndOfTheMeeting = TimeZoneInfo.ConvertTimeFromUtc(meeting.EndOfTheMeeting, meeting.TimeZone);
             return meeting;
         }
     }

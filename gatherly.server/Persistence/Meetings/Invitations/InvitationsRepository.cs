@@ -53,6 +53,15 @@ public class InvitationsRepository : IInvitationsRepository
         }
     }
     
+    public async Task<bool> IsInvitationExist(Guid userId, Guid meetingId)
+    {
+        using (var session = _sessionFactory.OpenSession())
+        {
+            return await session.Query<Models.Meetings.Invitations.Invitations>().
+                Where(x => x.MeetingId == meetingId && x.UserId == userId).AnyAsync();
+        }
+    }
+    
     public async Task<bool> DeleteInvitation(Guid invitationId)
     {
         using (var session = _sessionFactory.OpenSession())
@@ -61,10 +70,7 @@ public class InvitationsRepository : IInvitationsRepository
             {
                 var existingInvitation = await session.Query<Models.Meetings.Invitations.Invitations>()
                     .SingleOrDefaultAsync(x => x.Id == invitationId);
-
                 if (existingInvitation == null) return false;
-                
-
                 await session.DeleteAsync(existingInvitation);
                 await transaction.CommitAsync();
                 return true;
@@ -76,7 +82,6 @@ public class InvitationsRepository : IInvitationsRepository
     {
         using (var session = NHibernateHelper.OpenSession())
         {
-            // Query with join to get invitations and corresponding users
             var invitations = await session.Query<Models.Meetings.Invitations.Invitations>()
                 .Where(i => i.MeetingId == meetingId).Join(session.Query<Models.Authentication.UserEntity.UserEntity>(), 
                     invitation => invitation.UserId, 
@@ -85,7 +90,7 @@ public class InvitationsRepository : IInvitationsRepository
                     {
                         Id = invitation.Id,
                         UserId = invitation.UserId,
-                        UserName = user.Name, // Mapping username from the user entity
+                        UserName = user.Name,
                         UserAvatar = user.AvatarName,
                         MeetingId = invitation.MeetingId,
                         ValidTime = invitation.ValidTime
@@ -100,11 +105,10 @@ public class InvitationsRepository : IInvitationsRepository
     {
         using (var session = NHibernateHelper.OpenSession())
         {
-            // Query with join to get invitations and corresponding meeting details
             var invitations = await session.Query<Models.Meetings.Invitations.Invitations>()
                 .Where(i => i.UserId == userId)
                 .Join(
-                    session.Query<Models.Meetings.Meeting.Meeting>(), // Assuming you have a Meeting entity
+                    session.Query<Models.Meetings.Meeting.Meeting>(),
                     invitation => invitation.MeetingId,
                     meeting => meeting.Id,
                     (invitation, meeting) => new Entities.Meetings.InvitationDTOGetByUser

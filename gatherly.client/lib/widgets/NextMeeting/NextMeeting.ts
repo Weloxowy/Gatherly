@@ -9,7 +9,7 @@ async function NextMeeting(): Promise<Meeting | null> {
         if (!response.data || Object.keys(response.data).length === 0) {
             return null;
         }
-
+        console.log(response);
         return {
             //@ts-ignore
             meetingId: response.data.id,
@@ -18,7 +18,11 @@ async function NextMeeting(): Promise<Meeting | null> {
             //@ts-ignore
             name: response.data.meetingName,
             //@ts-ignore
-            place: response.data.placeName
+            place: response.data.placeName,
+            //@ts-ignore
+            timezoneOffset: response.data.timeZone.baseUtcOffset,
+            //@ts-ignore
+            timezoneName: response.data.timeZone.displayName,
         };
     } catch (error) {
         throw error;

@@ -4,17 +4,42 @@ import React from "react";
 import dayjs from "dayjs";
 import axiosInstance from "@/lib/utils/AxiosInstance";
 import {closeAllModals} from "@mantine/modals";
+import {notifications} from "@mantine/notifications";
+import {useGlobalNotifications} from "@/components/notifications/NotificationContext";
 
 const InvitationItem = ({data}: { data: InvitationMeeting }) => {
+    const { showNotification } = useGlobalNotifications();
     function handleAccept() {
         axiosInstance.post('Invitations/' + data.InvitationId + '/confirm').then(r => {
-            window.location.href = "https://localhost:3000/meeting/" + data.meetingId
+            notifications.show({
+                loading: true,
+                title: 'Spotkanie zostało potwierdzone',
+                message: 'Zostaniesz zaraz do niego przeniesiony, nie zamykaj aplikacji',
+                autoClose: false,
+                withCloseButton: false,
+            });
+            window.location.href = window.location.origin + "/meeting/" + data.meetingId;
         });
         closeAllModals();
     }
 
     function handleDecline() {
+            showNotification({
+                title: 'Spotkanie zostało odrzucone',
+                message: 'super',
+                type: 'success', // można ustawić 'error', 'info' itp.
+            });
+
         axiosInstance.delete('Invitations/' + data.InvitationId + '/decline').then(r => {
+           /*
+            notifications.show({
+                loading: false,
+                title: 'Spotkanie zostało odrzucone',
+                message: 't',
+                autoClose: false,
+                withCloseButton: false,
+            });
+            */
             window.location.reload()
         });
         closeAllModals();

@@ -31,4 +31,10 @@ public class InvitationsService : IInvitationsService
     {
         return _invitationsRepository.DeleteInvitation(invitationId);
     }
+
+    public async Task<bool> IsInvitationExist(Guid userId, Guid meetingId)
+    {
+        return await _invitationsRepository.IsInvitationExist(userId, meetingId);
+    }
+
 }

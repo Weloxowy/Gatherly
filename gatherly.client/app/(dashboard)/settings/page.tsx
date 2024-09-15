@@ -16,7 +16,6 @@ export default function Settings() {
     const [avatar, setAvatar] = useState('');
 
     useEffect(() => {
-        // Ustaw dane użytkownika w zmiennej
         const fetchUserInfo = async () => {
             const x = await JwtTokenValid();
             if (x) {
@@ -36,7 +35,7 @@ export default function Settings() {
             children: (<ChangeBasicUserData/>),
         });
     };
-    
+
     const handleDeleteAccountModal = () => modals.openConfirmModal({
         title: <Title order={2}>Usunięcie profilu</Title>,
         size: '70%',
@@ -59,8 +58,9 @@ export default function Settings() {
             <Title order={2}>Ustawienia</Title>
             Zmień swój awatar, podejrzyj szczegóły konta
         </div>
-        <Paper radius="lg" shadow="lg" p="lg" className={classes.componentMd}>
-            <Title order={2}>Twoje dane</Title>
+        <Paper radius="lg" shadow="lg" p="lg" className={classes.componentMd} m="lg">
+            <Title order={3}>Twoje dane</Title>
+            <Space h="lg"/>
             <Group style={{alignContent: "stretch",alignItems:"center"}}>
                 <Text size="lg">
                     {name} <br/>
@@ -68,10 +68,8 @@ export default function Settings() {
                 </Text>
                 <Avatar size={120} src={"/avatars/" + avatar + ".png"}/>
             </Group>
-        </Paper>
-        <Space h="lg"/>
-        <Paper radius="lg" shadow="lg" p="lg">
-            <Group p={"lg"}>
+            <Space h="lg"/>
+            <Group>
                 <Button onClick={handleChangeDataModal}>Zmień podstawowe dane konta</Button>
                 <Button onClick={handleDeleteAccountModal}>Usuń konto</Button>
             </Group>

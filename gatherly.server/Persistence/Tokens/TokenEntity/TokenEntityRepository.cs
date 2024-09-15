@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using DotNetEnv;
 using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Tokens.TokenEntity;
 using Microsoft.IdentityModel.Tokens;
@@ -34,8 +35,8 @@ public class TokenEntityRepository : ITokenEntityRepository
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            "localhost:44329",
-            "localhost:3000",
+            Env.GetString("ISSUER"),
+            Env.GetString("AUDIENCE"),
             claims,
             expires: DateTime.UtcNow.AddMinutes(15),
             signingCredentials: creds
@@ -62,8 +63,8 @@ public class TokenEntityRepository : ITokenEntityRepository
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = "localhost:44329",
-                ValidAudience = "localhost:3000",
+                ValidIssuer = Env.GetString("ISSUER"),
+                ValidAudience = Env.GetString("AUDIENCE"),
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             }, out var validatedToken);
 

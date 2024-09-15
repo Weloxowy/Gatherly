@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {useParams} from 'next/navigation';
 import {ExtendedMeeting} from '@/lib/interfaces/types';
 import classes from "@/app/(dashboard)/meeting/[id]/MeetingComponent.module.css";
-import {Button, Container, Grid, Modal, Paper, rem, SimpleGrid, Skeleton, Title} from "@mantine/core";
+import {Button, Container, Grid, LoadingOverlay, Modal, Paper, rem, SimpleGrid, Skeleton, Title} from "@mantine/core";
 import MeetingDetails from "@/components/dashboard/MeetingDetails/MeetingDetails";
 import dynamic from "next/dynamic";
 import InviteIcon from "@/components/widgets/Invite/InviteIcon";
@@ -11,7 +11,6 @@ import '@mantine/dates/styles.css';
 import GetMeeting from "@/lib/widgets/GetMeeting";
 import {useDisclosure} from "@mantine/hooks";
 import dayjs from "dayjs";
-import EditMeeting from "@/components/dashboard/EditMeeting/EditMeeting";
 import ChatWidget from "@/components/widgets/Chat/ChatWidget";
 import {openModal} from "@mantine/modals";
 import InviteWidget from "@/components/widgets/Invite/InviteWidget";
@@ -45,7 +44,7 @@ export default function Meeting() {
                 const meetingId = id.toString();
 
                 try {
-                    setLoading(true); // Ustawienie stanu ładowania na true przed rozpoczęciem fetchowania
+                    setLoading(true);
                     const meeting = await GetMeeting(meetingId);
 
                     if (meeting) {
@@ -56,7 +55,7 @@ export default function Meeting() {
                 } catch (err) {
                     setError('Failed to load');
                 } finally {
-                    setLoading(false); // Zakończenie ładowania
+                    setLoading(false);
                 }
             }
         };
@@ -65,7 +64,12 @@ export default function Meeting() {
     }, [id]);
 
     if (loading) return <div>
-        Loading...
+        <LoadingOverlay
+            visible={loading}
+            zIndex={1000}
+            overlayProps={{ radius: 'sm', blur: 2 }}
+            loaderProps={{ color: 'violet', type: 'bars' }}
+        />
     </div>;
     if (error) return <div>{error}</div>;
 
@@ -73,12 +77,12 @@ export default function Meeting() {
         <div className={classes.name}>
             <Title order={2}>{data?.name}</Title>
 
-            <>Spotkanie utworzył(a): <b>{data?.ownerName}</b> | {dayjs(adjustTimeToLocal(//@ts-ignore
-                                                                    data?.creationTime)).format("DD.MM.YYYY")}</>
+            <>Spotkanie utworzył(a): <b>{data?.ownerName}</b> | {dayjs(//@ts-ignore
+                                                                    data?.creationTime).format("DD.MM.YYYY")}</>
         </div>
         <Container my="lg" m={0}>
             <SimpleGrid cols={{base: 1, sm: 2}} spacing="md">
-                <Paper radius="lg" shadow="lg" p="lg" style={{height: "100%", width: "100%"}}>
+                <Paper radius="lg" shadow="lg" p="lg" style={{height: "82vh", width: "100%", display: 'flex', flexDirection: 'column'}}>
                     {data && <MeetingDetails data={data}/>}
                 </Paper>
                 <Grid gutter="md" w={rem(1000)}>
@@ -89,14 +93,21 @@ export default function Meeting() {
                         </Paper>
                     </Grid.Col>
                     <Grid.Col span={3}>
-                        <Paper radius="lg" shadow="lg" p="lg" style={{height: "30vh"}} onClick={handleOpenModal}>
-                            <InviteIcon />
+                        <Paper radius="lg" shadow="lg" p="lg" style={{height: "30vh"}} onClick={data?.isRequestingUserAnOwner === true ? handleOpenModal : undefined}>
+                            <InviteIcon isAdmin={data?.isRequestingUserAnOwner === true} />
                         </Paper>
                     </Grid.Col>
                     <Grid.Col span={12}>
                         <Paper radius="lg" shadow="lg" p="lg" style={{height: "50vh"}}>
                             {//@ts-ignore
-                                <ChatWidget meetingId={data?.id} />
+                                data && <ChatWidget
+                                    meetingId={data?.id}
+                                    usersList={[
+                                        ...(data?.confirmedInvites ?? []),
+                                        ...(data?.rejectedInvites ?? []),
+                                        ...(data?.sendInvites ?? [])
+                                    ]}
+                                />
                             }
                         </Paper>
                     </Grid.Col>

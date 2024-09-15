@@ -53,3 +53,15 @@
     display: flex;
     flex-direction: column;
 }
+
+.autocomplete{
+    border: #7d62d1 1px;
+    border-radius:20px;
+    padding: 5px;
+
+}
+.autocompleteItem:hover{
+    background-color: #7d62d1;
+    color: white;
+    border-radius: 5px;
+}

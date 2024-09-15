@@ -35,7 +35,6 @@ export default function AutorizationTestPage() {
         try {
             const response = await axiosInstance.get('User/profile', {
             });
-            //console.log('Get user info response:', response);
         } catch (error) {
             console.error('Get user info failed:', error);
         }
@@ -46,7 +45,6 @@ export default function AutorizationTestPage() {
                 'Tokens/refresh/validate',
                 {}
             );
-            //console.log('Refresh validation response:', response);
         } catch (error) {
             console.error('Refresh validation failed:', error);
         }
@@ -56,7 +54,6 @@ export default function AutorizationTestPage() {
         try {
             const response = await axiosInstance.get('User/profile/7CB79F46-55D5-4908-BE27-B1C3010D408F', {
             });
-            //console.log('Get user info response:', response);
         } catch (error) {
             console.error('Get user info failed:', error);
         }
@@ -64,12 +61,10 @@ export default function AutorizationTestPage() {
 
     const handleJwtValidation = async () => {
         try {
-
             const response = await axiosInstance.post(
                 'Tokens/jwt/validate',
                 {},
             );
-            //console.log('JWT validation response:', response);
         } catch (error) {
             console.error('JWT validation failed:', error);
         }

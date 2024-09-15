@@ -1,6 +1,6 @@
 ﻿import React, { useState } from "react";
 import {
-    Button,
+    Button, Checkbox,
     Flex,
     Group,
     Text,
@@ -38,7 +38,7 @@ const NewMeeting = () => {
     const [timezone, setTimezone] = useState('');
     const [errors, setErrors] = useState<Errors>({}); // Use the Errors type here
     const [loading, setLoading] = useState(false);  // State for button loading
-
+    const [checkboxChecked, setCheckboxChecked] = useState(false);
     const handleSubmit = () => {
         const validationErrors: Errors = {};
 
@@ -46,7 +46,7 @@ const NewMeeting = () => {
         if (!title) validationErrors.title = "Nazwa spotkania jest wymagana";
         if (!desc) validationErrors.desc = "Opis spotkania jest wymagany";
         if (!startDate) validationErrors.startDate = "Data rozpoczęcia spotkania jest wymagana";
-        if (!endDate) validationErrors.endDate = "Data zakończenia spotkania jest wymagana";
+        if (!endDate && !checkboxChecked) validationErrors.endDate = "Data zakończenia spotkania jest wymagana";
         if (!address.name) validationErrors.address = "Adres spotkania jest wymagany";
         if (!timezone) validationErrors.timezone = "Strefa czasowa jest wymagana";
         if (startDate && endDate && dayjs(startDate).unix() > dayjs(endDate).unix())
@@ -62,7 +62,7 @@ const NewMeeting = () => {
             meetingName: title,
             description: desc,
             startOfTheMeeting: startDate,
-            endOfTheMeeting: endDate,
+            endOfTheMeeting: checkboxChecked ? null : endDate,
             placeName: address.name,
             lat: address.lon,
             lon: address.lat,
@@ -72,7 +72,7 @@ const NewMeeting = () => {
             // Simulate delay of 3 seconds before redirecting
             setTimeout(() => {
                 setLoading(false); // Stop loading
-                window.location.href = "https://localhost:3000/meeting/" + r;
+                window.location.href = window.location.origin + "/meeting/" + r;
             }, 3000);
         });
     };
@@ -140,10 +140,17 @@ const NewMeeting = () => {
                 placeholder="Wybierz datę"
                 locale='pl'
                 name="endDate"
+                disabled={checkboxChecked}
                 onChange={setEndDate}
             />
             {errors.endDate && <Text color="red">{errors.endDate}</Text>}
-
+            <Checkbox
+                //trzeba zmienić edycje spotkania, szczegoly spotkania i na backu
+                label="Zaznacz jeżeli spotkanie jest bez zaplanowanej godziny końcowej"
+                radius="lg"
+                checked={checkboxChecked}
+                onChange={(event) => setCheckboxChecked(event.currentTarget.checked)}
+            />
             <Text size="xl" c="dimmed" fw={500}>Strefa czasowa spotkania</Text>
             <TimezoneSelectBar onSelect={setTimezone} />
             {errors.timezone && <Text color="red">{errors.timezone}</Text>}
@@ -154,8 +161,10 @@ const NewMeeting = () => {
                 justifyContent: "space-between",
                 padding: "10px"
             }}>
+                <Group m="lg" ml="0">
                 <Button onClick={handleSubmit} loading={loading} >Zatwierdź zmiany</Button>
                 <Button variant="outline" color="red" onClick={handleRejectChanges} loading={loading}>Odrzuć zmiany</Button>
+                </Group>
             </Group>
         </>
     );

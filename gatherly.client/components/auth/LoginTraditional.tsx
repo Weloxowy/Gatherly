@@ -10,14 +10,14 @@ const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
         initialValues: {
             email: '', password: '',
         }, validate: {//  ^\S+@\S+\.+\S{2}
-            email: (value) => (/^\S+@\S+\.+\S{2}/.test(value) ? null : 'Nieprawidłowy adres email'),
+            email: (value) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) ? null : 'Nieprawidłowy adres email'),
         },
     });
 
     const handleSubmitForm = async (values: { email: string, password: string }) => {
         try {
             await loginValid(values.email, values.password);
-            window.location.href = "/autorization";
+            window.location.href = "/home";
         } catch (error: any) {
             console.error('Error in handleSubmitForm:', error);
             switch (error.status) {

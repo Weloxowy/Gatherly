@@ -25,7 +25,7 @@ namespace gatherly.server.Persistence.Chat
             var meeting = Context.GetHttpContext().Request.Query["meetingId"].ToString();
             if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(meeting))
             {
-                Context.Abort(); // Jeśli nie ma usera lub spotkania, rozłącz połączenie
+                Context.Abort();
                 return;
             }
             await Groups.AddToGroupAsync(Context.ConnectionId, meeting);
@@ -52,7 +52,7 @@ namespace gatherly.server.Persistence.Chat
                 throw new UnauthorizedAccessException("User is not authenticated.");
             }
 
-            var senderId = new Guid(userId);  // Załóżmy, że masz tożsamość opartą na JWT
+            var senderId = new Guid(userId);
             var meeting = Context.GetHttpContext().Request.Query["meetingId"].ToString();
             var message = new Message
             {
@@ -61,8 +61,6 @@ namespace gatherly.server.Persistence.Chat
                 Timestamp = DateTime.UtcNow,
                 MeetingId = Guid.Parse(meeting),
             };
-            
-            // Zapis wiadomości do bazy danych za pomocą serwisu
             await _chatService.SaveMessageAsync(message);
             var outMessage = new MessagesDTO
             {
@@ -70,17 +68,14 @@ namespace gatherly.server.Persistence.Chat
                 Content = content,
                 Timestamp = DateTime.UtcNow,
                 MeetingId = Guid.Parse(meeting),
-                TypesOfMessage = TypesOfMessage.Me,
+                TypesOfMessage = TypesOfMessage.OtherUsers,
                 UserAvatar = user.AvatarName,
                 UserName = user.Name
             };
+            await Clients.GroupExcept(meeting, Context.ConnectionId).SendAsync("ReceiveMessage", user, outMessage);
+            //await Clients.Group(meeting).SendAsync("ReceiveMessage", user, outMessage);
+            outMessage.TypesOfMessage = TypesOfMessage.Me;
             await Clients.Caller.SendAsync("ReceiveMessage",user, outMessage);
-
-            outMessage.TypesOfMessage = TypesOfMessage.OtherUsers;
-            
-                await Clients.Others.SendAsync("ReceiveMessage",user, outMessage);
-            
-            // Rozesłanie wiadomości do wszystkich połączonych klientów
             //await Clients.All.SendAsync("ReceiveMessage", user, outMessage);
         }
 

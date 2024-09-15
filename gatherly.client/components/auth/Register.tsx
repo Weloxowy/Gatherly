@@ -18,7 +18,7 @@ const Register: React.FC<AuthProps> = ({setAuthMethod, options}) => {
     const handleSubmitForm = async (values: { name: string, email: string, password: string }) => {
         try {
             const res = await registerUser(values.name, values.email, values.password);
-            window.location.href = "/autorization";
+            window.location.href = "/home";
         } catch (error: any) {
             console.error('Error in handleSubmitForm:', error);
             switch (error.status) {

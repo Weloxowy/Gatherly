@@ -12,7 +12,7 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
         initialValues: {
             email: '',
         }, validate: {
-            email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'),
+            email: (value) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) ? null : 'Nieprawidłowy adres email'),
         },
     });
 
@@ -52,7 +52,7 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
     const handleSubmitForm2 = async (values: { code: string }) => {
         try {
             await sendReturnedCode(email, values.code);
-            window.location.href = "/autorization";
+            window.location.href = "/home";
         } catch (error: any) {
             console.error('Error in handleSubmitForm2:', error);
             switch (error.code) {

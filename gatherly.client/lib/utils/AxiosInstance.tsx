@@ -3,7 +3,7 @@ import RequestRefreshTokens from "@/lib/auth/RequestRefreshTokens";
 import LogoutUser from "@/lib/auth/logoutUser";
 
 const axiosInstance = axios.create({
-    baseURL: 'https://localhost:44329/api/',
+    baseURL: process.env.API_ADDRESS,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -27,7 +27,7 @@ axiosInstance.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
         if (originalRequest.url?.startsWith('auth/login') ||originalRequest.url?.startsWith('auth/register')) {
-            return Promise.reject(error); // Po prostu odrzucamy błąd, ale nie próbujemy odświeżać tokena
+            return Promise.reject(error);
         }
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;

@@ -4,7 +4,8 @@ const nextConfig = {
     optimizeFonts: true,
     env:{
         MAP_KEY : process.env.MAP_KEY,
-        DB : process.env.DB
+        CHAT_ADDRESS : process.env.CHAT_ADDRESS,
+        API_ADDRESS : process.env.API_ADDRESS
     },
     /*
     i18n: {

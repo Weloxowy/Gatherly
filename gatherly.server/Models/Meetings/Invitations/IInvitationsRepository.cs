@@ -9,4 +9,5 @@ public interface IInvitationsRepository
     public Task<List<InvitationDTOGetInvited>> GetAllInvitationsByMeetingId(Guid meetingId);
     public Task<List<InvitationDTOGetByUser>> GetAllInvitationsByUserId(Guid userId);
     public Task<bool> DeleteInvitation(Guid invitationId);
+    public Task<bool> IsInvitationExist(Guid userId, Guid meetingId);
 }

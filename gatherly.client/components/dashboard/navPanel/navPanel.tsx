@@ -1,6 +1,6 @@
 ﻿"use client"
 import React, {useEffect, useState} from "react";
-import {Avatar, Group, rem, Text, Title, UnstyledButton} from '@mantine/core';
+import {Avatar, Group, Indicator, rem, Text, UnstyledButton} from '@mantine/core';
 import {
     IconHome2,
     IconListCheck,
@@ -14,6 +14,7 @@ import Link from "next/link";
 import LogoutUser from "@/lib/auth/logoutUser";
 import JwtTokenValid from "@/lib/auth/GetUserInfo";
 import {UserInfo} from "@/lib/interfaces/types";
+import axiosInstance from "@/lib/utils/AxiosInstance";
 
 const data = [
     {link: '/home/', label: 'Home', icon: IconHome2},
@@ -24,24 +25,29 @@ const data = [
 
 const NavPanel = () => {
     const [active, setActive] = useState('');
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Dodanie stanu userInfo
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const [invitation, setInvitation] = useState<boolean>();
 
     useEffect(() => {
-        // IIFE to extract the last part of the URL and compare with the data array
+        const fetchInvitationStatus = async () => {
+            try {
+                const response = await axiosInstance.get(`Invitations/invitations`);
+                setInvitation(response.data);
+            } catch (error) {
+                console.error('Error fetching meeting status:', error);
+            }
+        };
+        fetchInvitationStatus();
+    }, []);
+
+    useEffect(() => {
         (function() {
-            // Get the current URL path
             const currentPath = window.location.pathname;
-
-            // Extract the last part of the path
-            const lastSegment = currentPath.split('/').filter(Boolean).pop(); // filters empty strings
-
-            // Find a matching item in the `data` array
+            const lastSegment = currentPath.split('/').filter(Boolean).pop();
             const matchedItem = data.find(item => {
-                const itemPath = item.link.replace(/\//g, ''); // Remove slashes for comparison
+                const itemPath = item.link.replace(/\//g, '');
                 return itemPath === lastSegment;
             });
-
-            // If a match is found, set the active state to its label
             if (matchedItem) {
                 setActive(matchedItem.label);
             }
@@ -49,7 +55,6 @@ const NavPanel = () => {
     }, []);
 
     useEffect(() => {
-        // Ustaw dane użytkownika w zmiennej
         const fetchUserInfo = async () => {
             const x = await JwtTokenValid();
             if (x) {
@@ -77,6 +82,7 @@ const NavPanel = () => {
                 setActive(item.label);
             }}
         >
+            {item.link == "/invitations" && invitation == true ? (<Indicator offset={-20} processing/>) : ('')}
             <item.icon className={classes.linkIcon} stroke={1.5}/>
             <span>{item.label}</span>
         </Link>
@@ -91,13 +97,10 @@ const NavPanel = () => {
             <div className={classes.footer}>
                 <UnstyledButton>
                 <Group p={rem(10)}>
-                    <Avatar radius="xl" size="lg" src={"/avatars/"+ userInfo.avatarName +".png"} ></Avatar>
+                    <Avatar component={"a"} href="/settings" radius="xl" size="lg" src={"/avatars/"+ userInfo.avatarName +".png"} ></Avatar>
                     <div style={{flex: 1}}>
                         <Text size="lg" fw={500}>
                             {userInfo.name}
-                        </Text>
-                        <Text c="dimmed" size="sm">
-                            {userInfo.email}
                         </Text>
                     </div>
                 </Group>

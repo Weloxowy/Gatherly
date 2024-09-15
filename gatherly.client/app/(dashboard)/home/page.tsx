@@ -1,5 +1,5 @@
 "use client"
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Container, Grid, Group, Paper, SimpleGrid, Title} from "@mantine/core";
 import classes from './Home.module.css';
 import CalendarCardWidget from "@/components/widgets/CalendarCard/CalendarCardWidget";
@@ -10,8 +10,21 @@ import MeetingsWidget from "@/components/widgets/Meetings/MeetingsWidget";
 import {IconCalendarPlus, IconListCheck, IconCalendarEvent} from "@tabler/icons-react";
 import {openModal} from "@mantine/modals";
 import NewMeeting from "@/components/dashboard/NewMeeting/NewMeeting";
+import JwtTokenValid from "@/lib/auth/GetUserInfo";
 
 export default function Home() {
+    const [name, setName] = useState('');
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            const x = await JwtTokenValid();
+            if (x) {
+                setName(x.name);
+            }
+        };
+        fetchUserInfo();
+    }, []);
+
     const handleOpenModal = () => {
         openModal({
             title: 'Nowe spotkanie',
@@ -26,14 +39,13 @@ export default function Home() {
     return (<div className={classes.main}>
         <Group className={classes.head}>
             <div className={classes.name}>
-                <Title order={2}>Witaj, Anno</Title>
+                <Title order={2}>Witaj, {name}</Title>
                 Czas na zorganizowanie spotkania!
             </div>
             <Button className={classes.buttonHead} variant={"outline"} rightSection={<IconCalendarPlus size={14}/>}
                     onClick={() => handleOpenModal()}>Utwórz spotkanie </Button>
         </Group>
         <Container my="lg" m={0}>
-            {/* POPRAWIC GRIDA*/}
             <SimpleGrid cols={{base: 1, lg: 2}} w={{base: "100%", sm: "100%"}} spacing="md">
                 <Paper radius="lg" shadow="lg" p="lg" className={classes.componentMd}>
                         <span className={classes.title}>

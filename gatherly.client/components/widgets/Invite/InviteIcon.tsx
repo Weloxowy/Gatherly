@@ -3,7 +3,7 @@ import { qrGenerator } from '@/lib/utils/qrGenerator/qrGenerator';
 import {IconHelpCircle} from "@tabler/icons-react";
 import {Tooltip} from "@mantine/core";
 
-const InviteIcon: React.FC = () => {
+const InviteIcon =({ isAdmin }: { isAdmin: boolean }) => {
     const [svg, setSvg] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
@@ -33,11 +33,34 @@ const InviteIcon: React.FC = () => {
 
     return (
         <>
-            <Tooltip label={"Zeskanuj kod QR do szybkiego przejścia do spotkania. Kliknij aby przejść do zapraszania osób do spotkania."}>
-                <IconHelpCircle />
-            </Tooltip>
+            {isAdmin ? (
+                <div style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    textAlign: "center"
+                }}>
+                    Zaproś znajomych
+                    <Tooltip label={"Zeskanuj kod QR do szybkiego przejścia do spotkania. Kliknij aby przejść do zapraszania osób do spotkania."}>
+                        <IconHelpCircle/>
+                    </Tooltip>
+                </div>
+            ) : (
+                <div style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    textAlign: "center"
+                }}>
+                    Kod QR do spotkania
+                </div>
+            )}
+
+
             {svg ? (
-                <div dangerouslySetInnerHTML={{ __html: svg }} />
+                <div dangerouslySetInnerHTML={{__html: svg}}/>
             ) : (
                 <div>No QR code available</div>
             )}

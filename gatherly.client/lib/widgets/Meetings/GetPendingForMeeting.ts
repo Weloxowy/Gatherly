@@ -5,7 +5,7 @@ async function GetPendingForMeeting(meetingId: string): Promise<Person[]> {
     try {
         const response = await axiosInstance.get(`Invitations/meeting/${meetingId}`);
         const mapToPerson = (meeting: any): Person => ({
-            //id: meeting.id,
+            invitationId: meeting.id,
             personId: meeting.userId,
             name: meeting.userName,
             avatar: meeting.userAvatar

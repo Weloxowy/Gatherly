@@ -31,7 +31,7 @@ public class UserController : ControllerBase
         _tokenEntityService = tokenEntityService;
         _refreshTokenService = refreshTokenService;
     }
-
+    
     //operations for logged-in user (not Admin)
 
     /// <summary>
@@ -84,9 +84,24 @@ public class UserController : ControllerBase
         var refresh = _refreshTokenService.GenerateRefreshToken(user.Id);
         var jwt = _tokenEntityService.GenerateToken(user, refresh.Id.ToString());
 
-        Response.Headers.Clear();
-        Response.Headers.Append("Authorization", $"Bearer {jwt}");
-        Response.Headers.Append("RefreshToken", refresh.Token);
+        var jwtCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddMinutes(15)
+        };
+
+        var refreshCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddHours(1)
+        };
+
+        Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
+        Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
 
         return Ok(user.ToDto());
     }

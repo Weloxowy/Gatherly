@@ -1,39 +1,83 @@
-﻿import React, {useEffect, useRef, useState} from 'react';
-import * as signalR from "@microsoft/signalr";
-import axios from "axios";
-import {Avatar, Button, Group, ScrollArea, TextInput, Tooltip} from "@mantine/core";
-import dayjs from "dayjs";
-import classes from "./ChatWidget.module.css";
-import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
+﻿import React, { useEffect, useRef, useState } from 'react';
+import * as signalR from '@microsoft/signalr';
+import axios from 'axios';
+import { Avatar, Button, Group, ScrollArea, TextInput, Tooltip } from '@mantine/core';
+import dayjs from 'dayjs';
+import classes from './ChatWidget.module.css';
+import adjustTimeToLocal from '@/lib/widgets/Meetings/adjustTimeToLocal';
+import { IconSend } from '@tabler/icons-react';
+import { Person } from '@/lib/interfaces/types';
 
 const axiosInstance = axios.create({
-    baseURL: "https://localhost:44329",
+    baseURL: process.env.CHAT_ADDRESS,
 });
 
 enum ErrorTypes {
-    none = "none",
-    lengthError = "lengthError",
-    connectionError = "connectionError"
+    none = 'none',
+    lengthError = 'lengthError',
+    connectionError = 'connectionError',
 }
 
-const ChatWidget = (meetingId: string) => {
+interface Message {
+    userName: string;
+    content: string;
+    timestamp: string;
+    userAvatar: string;
+    typesOfMessage: number;
+}
+
+const ChatWidget = ({ meetingId, usersList }: { meetingId: string; usersList: Person[] }) => {
     const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [value, setValue] = useState('');
     const viewport = useRef<HTMLDivElement>(null);
-    const [errorState, setErrorState] = useState<ErrorTypes>(ErrorTypes.none); // Poprawione przypisanie typu
+    const [errorState, setErrorState] = useState<ErrorTypes>(ErrorTypes.none);
+
+    const [suggestions, setSuggestions] = useState<Person[]>([]); // Lista sugestii użytkowników
+    const [showAutocomplete, setShowAutocomplete] = useState(false); // Wyświetlanie listy autouzupełniania
+    const [cursorPos, setCursorPos] = useState(0); // Pozycja kursora dla zastąpienia tekstu
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const inputValue = event.currentTarget.value;
+        setValue(inputValue);
+        setErrorState(ErrorTypes.none);
+
+        const atPos = inputValue.lastIndexOf('@');
+        setCursorPos(atPos);
+
+        if (atPos !== -1) {
+            const searchText = inputValue.slice(atPos + 1); // Tekst po znaku `@`
+            if (searchText.length > 0) {
+                setSuggestions(
+                    usersList.filter((user) =>
+                        user.name.toLowerCase().includes(searchText.toLowerCase())
+                    )
+                );
+                setShowAutocomplete(true);
+            } else {
+                setShowAutocomplete(false);
+            }
+        } else {
+            setShowAutocomplete(false);
+        }
+    };
+
+    const handleSelectUser = (user: Person) => {
+        // Zastąp tekst po znaku `@` wybranym użytkownikiem
+        const textBeforeAt = value.slice(0, cursorPos);
+        setValue(`${textBeforeAt}@${user.name} `); // Dodaj nazwę użytkownika do wiadomości
+        setShowAutocomplete(false);
+    };
 
     useEffect(() => {
         const newConnection = new signalR.HubConnectionBuilder()
-            //@ts-ignore
-            .withUrl(`${axiosInstance.defaults.baseURL}/chathub?meetingId=${meetingId.meetingId}`, {
+            .withUrl(`${axiosInstance.defaults.baseURL}/chathub?meetingId=${meetingId}`, {
                 withCredentials: true,
             })
             .withAutomaticReconnect()
             .build();
 
         setConnection(newConnection);
-
     }, [meetingId]);
 
     const scrollToBottom = () =>
@@ -45,32 +89,32 @@ const ChatWidget = (meetingId: string) => {
 
     useEffect(() => {
         if (connection) {
-            connection.start()
+            connection
+                .start()
                 .then(() => {
-                    connection.send("LoadMessageHistory");
+                    connection.send('LoadMessageHistory');
 
-                    connection.on("ReceiveMessage", (user, message) => {
-                        //@ts-ignore
-                        setMessages(prevMessages => [...prevMessages, message]);
+                    connection.on('ReceiveMessage', (user: string, message: Message) => {
+                        setMessages((prevMessages) => [...prevMessages, message]);
                     });
 
-                    connection.on("ReceiveMessageHistory", (history) => {
+                    connection.on('ReceiveMessageHistory', (history: Message[]) => {
                         setMessages(history);
-
                         setErrorState(ErrorTypes.none);
                     });
                 })
-                .catch(err => {
-                    console.error("Błąd połączenia:", err);
+                .catch((err) => {
+                    console.error('Błąd połączenia:', err);
                     setErrorState(ErrorTypes.connectionError);
                 });
         }
 
         return () => {
             if (connection) {
-                connection.off("ReceiveMessage");
-                connection.off("ReceiveMessageHistory");
-                connection.stop()
+                connection.off('ReceiveMessage');
+                connection.off('ReceiveMessageHistory');
+                connection
+                    .stop()
                     .catch(() => {
                         setErrorState(ErrorTypes.connectionError);
                     });
@@ -79,12 +123,16 @@ const ChatWidget = (meetingId: string) => {
     }, [connection]);
 
     const sendMessage = (content: string) => {
+        if (content.length == 0) {
+            return;
+        }
         if (content.length > 300) {
             setErrorState(ErrorTypes.lengthError);
             return;
         }
-        if (connection && connection.state === "Connected") {
-            connection.send("SendMessage", content)
+        if (connection && connection.state === 'Connected') {
+            connection
+                .send('SendMessage', content)
                 .then(() => {
                     setValue('');
                     setErrorState(ErrorTypes.none); // Wyczyszczenie błędu po udanym wysłaniu
@@ -97,7 +145,12 @@ const ChatWidget = (meetingId: string) => {
         }
     };
 
-    // @ts-ignore
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            sendMessage(value);
+        }
+    };
+
     return (
         <div className={classes.chatContainer}>
             <h1>Chat</h1>
@@ -105,43 +158,66 @@ const ChatWidget = (meetingId: string) => {
                 <div className={classes.messagesContainer}>
                     {messages.map((msg, index) => (
                         <Group key={index}>
-                            {//@ts-ignore
-                                msg.typesOfMessage !== 2 ? (
+                            {msg.typesOfMessage !== 2 ? (
                                 <Tooltip
                                     withArrow
-                                    //@ts-ignore
-                                    label={msg.userName + " | " + dayjs(adjustTimeToLocal(msg.timestamp)).format("DD.MM HH:mm")}
+                                    label={`${msg.userName} | ${dayjs(msg.timestamp).format(
+                                        'DD.MM HH:mm UTC'
+                                    )}`}
                                 >
-                                    <Avatar src={//@ts-ignore
-                                        "/avatars/" + msg.userAvatar + ".png"}></Avatar>
+                                    <Avatar src={`/avatars/${msg.userAvatar}.png`} />
                                 </Tooltip>
                             ) : null}
-                            <p key={index} className={//@ts-ignore
-                                msg.typesOfMessage === 0
-                                    ? classes.loggedMessage//@ts-ignore
-                                    : msg.typesOfMessage === 1
-                                        ? classes.otherMessage
-                                        : classes.systemMessage
-                            }>
-                                {//@ts-ignore
-                                    msg.content}
+                            <p
+                                key={index}
+                                className={
+                                    msg.typesOfMessage === 0
+                                        ? classes.loggedMessage
+                                        : msg.typesOfMessage === 1
+                                            ? classes.otherMessage
+                                            : classes.systemMessage
+                                }
+                            >
+                                {msg.content}
                             </p>
                         </Group>
                     ))}
                 </div>
             </ScrollArea>
+            {showAutocomplete && (
+                <div className={classes.autocomplete}>
+                    {suggestions.map((user, index) => (
+                        <div
+                            key={index}
+                            className={classes.autocompleteItem}
+                            onClick={() => handleSelectUser(user)}
+                        >
+                            {user.name}
+                        </div>
+                    ))}
+                </div>
+            )}
             <Group align="end" className={classes.inputPanel}>
                 <TextInput
                     className={classes.textInput}
                     value={value}
-                    onChange={(event) => {setValue(event.currentTarget.value); setErrorState(ErrorTypes.none)}}
-                    placeholder={"Wiadomość"}
-                    error={errorState === ErrorTypes.lengthError ? 'Wiadomość jest zbyt długa. Limit wynosi 300 znaków.' : (errorState === ErrorTypes.connectionError ? 'Nastąpił problem z połączeniem. Odśwież kartę aby ponowić połączenie.' : '')}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Wiadomość"
+                    error={
+                        errorState === ErrorTypes.lengthError
+                            ? 'Wiadomość jest zbyt długa. Limit wynosi 300 znaków.'
+                            : errorState === ErrorTypes.connectionError
+                                ? 'Nastąpił problem z połączeniem. Odśwież kartę, aby ponowić połączenie.'
+                                : ''
+                    }
                 />
-                <Button variant={"outline"} size={"sm"} onClick={() => sendMessage(value)}> Wyślij </Button>
+                <Button variant="outline" size="sm" onClick={() => sendMessage(value)}>
+                    <IconSend />
+                </Button>
             </Group>
         </div>
     );
-}
+};
 
 export default ChatWidget;

@@ -42,7 +42,15 @@ public class UserMeetingService : IUserMeetingService
     {
         return _userMeetingRepository.DeleteUserMeetingEntity(userMeetingId);
     }
+    public Task<Guid?> GetUserMeetingId(Guid userId, Guid meetingId)
+    {
+        return _userMeetingRepository.GetUserMeetingId(userId, meetingId);
+    }
 
+    public Task<InvitationStatus?> GetUserMeetingStatus(Guid userId, Guid meetingId)
+    {
+        return _userMeetingRepository.GetUserMeetingStatus(userId, meetingId);
+    }
     public Task<Models.Meetings.UserMeeting.UserMeeting> ChangeInvitationStatus(Guid userMeetingId, InvitationStatus status)
     {
         return _userMeetingRepository.ChangeInvitationStatus(userMeetingId, status);
@@ -72,4 +80,10 @@ public class UserMeetingService : IUserMeetingService
     {
         return _userMeetingRepository.GetInviteByIds(meetingId, userId);
     }
+
+    public Task<bool> IsUserInMeeting(Guid userId, Guid meetingId)
+    {
+        return _userMeetingRepository.IsUserInMeeting(userId, meetingId);
+    }
+
 }

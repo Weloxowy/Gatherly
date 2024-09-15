@@ -22,7 +22,7 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
             meetingId: data.id,
         },
         validate: {
-            email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'),
+            email: (value) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) ? null : 'Nieprawidłowy adres email'),
         },
     });
 
@@ -60,6 +60,7 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
             try {
                 const get = await GetInvitesForMeeting(data.id);
                 setInvitedUsers(get);
+                console.log(get);
                 setRefreshData(false);
             } catch (error) {
                 console.error("Failed to fetch invited users", error);
@@ -71,6 +72,7 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
         (async () => {
             try {
                 const get = await GetPendingForMeeting(data.id);
+                console.log(get);
                 setPendingUsers(get);
                 setRefreshData(false);
             } catch (error) {
@@ -106,6 +108,9 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                     break;
                 case 401:
                     form.setErrors({ email: 'Nie masz uprawnień do zapraszania' });
+                    break;
+                case 401:
+                    form.setErrors({ email: 'Zaproszenie już zostało wysłane' });
                     break;
                 case 404:
                     form.setErrors({ email: 'Użytkownik nie istnieje' });
@@ -169,10 +174,11 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                         <AvatarGroup>
                             {invitedUsers.slice(0, 5).map(invite => (
                                 <>
-                                    <Tooltip key={invite.personId} label={invite.name} transitionProps={{ transition: 'fade', duration: 300 }}>
+                                    <Tooltip key={invite.personId} label={invite.personId === data.ownerId ? invite.name+" (Właściciel)" : invite.name}
+                                             transitionProps={{ transition: 'fade', duration: 300 }}>
                                         <Avatar src={`/avatars/${invite.avatar}.png`} size={50} alt={invite.name} />
                                     </Tooltip>
-                                    { data.isRequestingUserAnOwner ? (
+                                    { data.isRequestingUserAnOwner && invite.personId !== data.ownerId ? (
                                         <ActionIcon
                                             variant="filled"
                                             color="red"
@@ -211,24 +217,21 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                     <Flex wrap="wrap" gap="xs">
                         <AvatarGroup>
                             {pendingUsers.slice(0, 20).map(invite => (
-                                <>
-                                <Tooltip key={invite.personId} label={invite.name} transitionProps={{ transition: 'fade', duration: 300 }}>
-                                    <Avatar src={`/avatars/${invite.avatar}.png`} size={50} alt={invite.name} />
-                                </Tooltip>
-                                    { data.isRequestingUserAnOwner ? (
+                                <React.Fragment key={invite.personId}>
+                                    <Tooltip label={invite.name} transitionProps={{ transition: 'fade', duration: 300 }}>
+                                        <Avatar src={`/avatars/${invite.avatar}.png`} size={50} alt={invite.name} />
+                                    </Tooltip>
+                                    {typeof invite.invitationId === 'string' && data.isRequestingUserAnOwner ? (
                                         <ActionIcon
                                             variant="filled"
                                             color="red"
                                             aria-label="Usuń zaproszenie"
-                                            //@ts-ignore
-                                            onClick={() => handleDeleteInvitation(invite.id, invite.name)}
+                                            onClick={() => handleDeleteInvitation(invite.invitationId ?? '', invite.name)}
                                         >
                                             <IconUserMinus style={{ width: '70%', height: '70%' }} stroke={1.5} />
                                         </ActionIcon>
-                                    ) : (
-                                        ''
-                                    )}
-                                </>
+                                    ) : null}
+                                </React.Fragment>
                             ))}
                             {pendingUsers.length > 20 && (
                                 <Tooltip

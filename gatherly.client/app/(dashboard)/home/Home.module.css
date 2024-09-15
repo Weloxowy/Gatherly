@@ -79,8 +79,6 @@
     position: relative;
     padding: 20px;
 }
-
-/* Gradient animowany */
 @keyframes moveGradient {
     0% {
         background-position: 0 50%;

@@ -32,12 +32,12 @@ export default function Meetings() {
             ),
         });
     };
-
     useEffect(() => {
         async function fetchData() {
             const mtgs = await MeetingsGetMonth();
+            mtgs.map((mtg) => mtg.date = dayjs(adjustTimeToLocal(mtg.date,mtg.timezoneOffset)).toDate());
             const cache = mtgs.reduce((acc, meeting) => {
-                const dateKey = dayjs(adjustTimeToLocal(meeting.date)).format('DD-MM-YYYY');
+                const dateKey = dayjs(adjustTimeToLocal(meeting.date,meeting.timezoneOffset)).format('DD-MM-YYYY');
                 if (!acc[dateKey]) acc[dateKey] = [];
                 acc[dateKey].push(meeting);
                 return acc;
@@ -50,7 +50,7 @@ export default function Meetings() {
 
 
     const getDayInfo = (date: Date) => {
-        const dateKey = dayjs(adjustTimeToLocal(date)).format('DD-MM-YYYY');
+        const dateKey = dayjs(date).format('DD-MM-YYYY');
         return dateInfoCache[dateKey] || [];
     };
 
@@ -81,7 +81,7 @@ export default function Meetings() {
                             },
                         })}
                         getDayProps={(date) => ({
-                            selected: selected.some((s) => dayjs(adjustTimeToLocal(date)).isSame(s, 'date')),
+                            selected: selected.some((s) => dayjs(date).isSame(s, 'date')),
                         })}
                         renderDay={(date) => {
                             const day = date.getDate();
@@ -106,7 +106,7 @@ export default function Meetings() {
                                             {exampleDateInfo.map(event => (
                                                 <div key={event.id} className={classes.eventInfo}>
                                                     <Title order={2}>{event.name}</Title>
-                                                    <div>{dayjs(adjustTimeToLocal(event.date)).format('DD.MM | HH:mm')}</div>
+                                                    <div>{dayjs(event.date).format('DD.MM | HH:mm')}</div>
                                                     <div>{event.place}</div>
                                                     <Button component={Link} href={"/meeting/" + event.id}>
                                                         Przejdź do wydarzenia

@@ -4,17 +4,17 @@
     padding: var(--mantine-spacing-lg);
     display: flex;
     flex-direction: column;
-    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), rgba(255,255,255,0.4));
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.4));
     backdrop-filter: blur(25px);
 }
 
 .navbarMain {
-    flex: 1;
+    flex: 1 1 auto;
 }
 
 .header {
     margin-bottom: calc(var(--mantine-spacing-lg) * 1.5);
-    border-bottom: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
     align-items: center;
     align-content: center;
     align-self: center;
@@ -23,7 +23,15 @@
 .footer {
     padding-top: var(--mantine-spacing-lg);
     margin-top: var(--mantine-spacing-lg);
-    border-top: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+    border-top: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.linkIcon {
+    color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
+    margin-right: var(--mantine-spacing-sm);
+    display: inline-block;
+    width: 25px;
+    height: 25px;
 }
 
 .link {
@@ -36,7 +44,7 @@
     border-radius: var(--mantine-radius-md);
     font-weight: 500;
 
-    @mixin hover {
+    &:hover {
         background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
         color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
 
@@ -46,25 +54,10 @@
     }
 
     &[data-active] {
-        &,
-        &:hover {
-            /*
-            background-color: var(--mantine-primary-color-1);
+        font-weight: bold;
+
+        .linkIcon {
             color: var(--mantine-primary-color-7);
-             */
-            font-weight: bold;
-
-
-            .linkIcon {
-                color: var(--mantine-primary-color-7);
-            }
         }
     }
-}
-
-.linkIcon {
-    color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
-    margin-right: var(--mantine-spacing-sm);
-    width: rem(25px);
-    height: rem(25px);
 }

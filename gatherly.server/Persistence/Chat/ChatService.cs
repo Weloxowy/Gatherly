@@ -23,4 +23,9 @@ public class ChatService : IChatService
         return await _chatRepository.GetMessagesFromDateAsync(meetingId, startDate, count);
     }
 
+    public async Task SaveSystemMessageAsync(Guid meetingId, string text)
+    {
+        await _chatRepository.SaveSystemMessageAsync(meetingId, text);
+    }
+
 }

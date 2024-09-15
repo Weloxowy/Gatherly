@@ -1,11 +1,15 @@
 import "./globals.css";
 import '@mantine/core/styles.css';
 import '@mantine/spotlight/styles.css';
+import '@mantine/notifications/styles.css';
 
 import {ColorSchemeScript, MantineProvider} from '@mantine/core';
 import React from "react";
 import {theme} from "@/app/theme";
 import {ModalsProvider} from "@mantine/modals";
+import {SpeedInsights} from "@vercel/speed-insights/next"
+import {Notifications} from "@mantine/notifications";
+import {NotificationsProvider} from "@/components/notifications/NotificationContext";
 
 export const metadata = {
     title: 'Gatherly', description: 'Planowanie spotkania nigdy nie było prostsze!'
@@ -15,13 +19,20 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
     return (<html lang="en" style={{scrollBehavior: 'smooth'}}>
         <head>
             <ColorSchemeScript/><title></title>
+            <SpeedInsights/>
         </head>
         <body>
-        <MantineProvider forceColorScheme={'light'} theme={theme}>
+
+        <MantineProvider defaultColorScheme={"auto"} theme={theme}>
             <ModalsProvider>
-                {children}
+                <NotificationsProvider>
+                    <Notifications/>
+                    {children}
+                </NotificationsProvider>
             </ModalsProvider>
+
         </MantineProvider>
+
         </body>
         </html>
 

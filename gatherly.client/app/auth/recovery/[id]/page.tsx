@@ -12,7 +12,7 @@ export default function Recovery() {
         initialValues: {
             email: '', password: '', confirmPassword: ''
         }, validate: {
-            email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Nieprawidłowy adres email'),
+            email: (value) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) ? null : 'Nieprawidłowy adres email'),
             password: (value, values) => value === values.confirmPassword ? null : 'Hasła nie są identyczne',
             confirmPassword: (value, values) => value === values.password ? null : 'Hasła nie są identyczne'
         },

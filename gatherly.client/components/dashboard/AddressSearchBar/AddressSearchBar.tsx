@@ -1,6 +1,5 @@
 ﻿import React, { useState, useRef } from 'react';
 import { Combobox, Loader, TextInput, useCombobox } from '@mantine/core';
-import GetMeeting from "@/lib/widgets/GetMeeting";
 
 const AddressSearchBar: React.FC<{ initialAddress?: string, onSelect?: (location: any) => void }> = ({ initialAddress, onSelect }) => {
     const combobox = useCombobox({
@@ -77,8 +76,8 @@ const AddressSearchBar: React.FC<{ initialAddress?: string, onSelect?: (location
                 const selectedLocation = data?.find((item) => item.value === optionValue);
                 if (selectedLocation && onSelect) {
                     onSelect({
-                        lat: selectedLocation.lat,
-                        lon: selectedLocation.lon,
+                        lat: selectedLocation.lon,
+                        lon: selectedLocation.lat,
                         name: optionValue,
                     });
                 }

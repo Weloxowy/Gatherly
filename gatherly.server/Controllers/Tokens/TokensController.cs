@@ -77,7 +77,7 @@ public class TokensController : ControllerBase
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddMinutes(15)
             };
 
@@ -85,7 +85,7 @@ public class TokensController : ControllerBase
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddHours(1)
             };
 
@@ -134,8 +134,10 @@ public class TokensController : ControllerBase
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = "localhost:44329",
-                ValidAudience = "localhost:3000",
+                //ValidIssuer = "https://gatherly.azurewebsites.net",
+                ValidIssuer = "https://localhost:44329",
+                //ValidAudience = "https://gatherly-mocha.vercel.app",
+                ValidAudience = "https://localhost:3000",
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Env.GetString("SECRET")))
             };
 

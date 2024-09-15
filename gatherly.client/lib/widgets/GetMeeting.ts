@@ -8,6 +8,7 @@ async function GetMeeting(meetingId: string): Promise<ExtendedMeeting> {
         const response3 = await axiosInstance.get<Meeting[]>('Meetings/pending/' + meetingId);
         const response4 = await axiosInstance.get<Meeting[]>('Meetings/rejected/' + meetingId);
 
+        // @ts-ignore
         return {
             id: response1.data.id,
             ownerId: response1.data.ownerId,
@@ -23,17 +24,25 @@ async function GetMeeting(meetingId: string): Promise<ExtendedMeeting> {
             placeName: response1.data.placeName,
             lon: response1.data.lon ?? 0,
             lat: response1.data.lat ?? 0,
+            //@ts-ignore
+            timezoneOffset: response1.data.timeZone.baseUtcOffset,
+            //@ts-ignore
+            timezoneName: response1.data.timeZone.displayName,
+            //@ts-ignore
             confirmedInvites: response2.data.map((invite: any) => ({
+                invitationId: invite.id,
                 personId: invite.UserId,
                 name: invite.Name,
                 avatar: invite.Avatar
             })),
             sendInvites: response3.data.map((invite: any) => ({
+                invitationId: invite.id,
                 personId: invite.UserId,
                 name: invite.Name,
                 avatar: invite.Avatar
             })),
             rejectedInvites: response4.data.map((invite: any) => ({
+                invitationId: invite.id,
                 personId: invite.UserId,
                 name: invite.Name,
                 avatar: invite.Avatar

@@ -4,7 +4,7 @@ import {cabinet, satoshi} from "./fonts"
 export const theme = createTheme({
     focusRing: "auto",
     fontSmoothing: true,
-    white: "#ffffff",
+    white: "#feffff",
     black: "#070707",
     defaultGradient: {from: 'violet.7', to: 'teal', deg: 20},
     primaryColor: "violet",

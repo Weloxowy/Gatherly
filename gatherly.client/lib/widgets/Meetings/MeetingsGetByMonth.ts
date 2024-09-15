@@ -11,11 +11,15 @@ async function MeetingsGetMonth(): Promise<Meeting[]> {
             //@ts-ignore
             id: item.id,
             //@ts-ignore
-            date: dayjs(adjustTimeToLocal(item.startOfTheMeeting)).toDate(),
+            date: dayjs(item.startOfTheMeeting).toDate(),
             //@ts-ignore
             name: item.meetingName,
             //@ts-ignore
-            place: item.placeName
+            place: item.placeName,
+            //@ts-ignore
+            timezoneOffset: item.timeZone.baseUtcOffset,
+            //@ts-ignore
+            timezoneName: item.timeZone.displayName
         }));
 
         return meetings;

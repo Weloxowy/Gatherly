@@ -15,14 +15,8 @@ export interface AuthProps {
 }
 
 //Meetings types
-export interface Meeting {
-    meetingId: string;
-    date: Date;
-    name: string;
-    place: string;
-}
-
 export interface Person {
+    invitationId : string | undefined,
     personId: string;
     name: string;
     avatar: string;
@@ -38,6 +32,8 @@ export interface Meeting {
     date: Date;
     name: string;
     place: string;
+    timezoneOffset: string;
+    timezoneName: string;
 }
 
 export interface ExtendedMeeting {
@@ -57,6 +53,8 @@ export interface ExtendedMeeting {
     sendInvites : Person[];
     rejectedInvites : Person[];
     isRequestingUserAnOwner : boolean;
+    timezoneOffset: string,
+    timezoneName: string,
 }
 
 export interface AddressInfo {

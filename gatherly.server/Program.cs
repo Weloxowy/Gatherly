@@ -62,8 +62,8 @@ builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gatherly API", Version = "v1.1" });
-    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,
-        $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
+    //c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,
+    //    $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 
     // Konfiguracja JWT
     var securityScheme = new OpenApiSecurityScheme
@@ -117,8 +117,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = "localhost:44329",
-        ValidAudience = "localhost:3000",
+        ValidIssuer = Env.GetString("ISSUER"),
+        ValidAudience = Env.GetString("AUDIENCE"),
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Env.GetString("SECRET")))
         //ClockSkew = TimeSpan.Zero
     };
@@ -168,29 +168,26 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", builder =>
     {
-        builder.WithOrigins("https://localhost:3000")
+        builder.WithOrigins(Env.GetString("AUDIENCE"))
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials()
-            .WithExposedHeaders("Content-Disposition")
+            //.WithExposedHeaders("Content-Disposition")
             .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
     });
 });
 
-//Add DB Context
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlServer(
-        "Server=localhost\\SQLEXPRESS;Database=Gatherly;Integrated Security=SSPI;Application Name=Gatherly; TrustServerCertificate=true;MultipleActiveResultSets=True"
+        builder.Configuration.GetConnectionString("DefaultConnection")
         , sqlOptions => sqlOptions.MigrationsAssembly(typeof(DataContext).Assembly.GetName().Name))
 );
 
-//FluentMigrator
-builder.Services.AddFluentMigratorCore() // Move FluentMigrator registration here
+builder.Services.AddFluentMigratorCore()
     .ConfigureRunner(c =>
     {
         c.AddSqlServer2016()
-            .WithGlobalConnectionString(
-                "Server=localhost\\SQLEXPRESS;Database=Gatherly;Integrated Security=SSPI;Application Name=Gatherly; TrustServerCertificate=true;MultipleActiveResultSets=True")
+            .WithGlobalConnectionString(builder.Configuration.GetConnectionString("DefaultConnection"))
             .ScanIn(Assembly.GetExecutingAssembly()).For.All();
     })
     .AddLogging(config => config.AddFluentMigratorConsole());
@@ -228,16 +225,19 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
-app.MapHub<ChatHub>("/chathub");
-
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseDeveloperExceptionPage();
+/*
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+*/
+app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
 
 app.Run();
 
@@ -247,9 +247,10 @@ public class DataContext : DbContext
     public DataContext(DbContextOptions<DataContext> options) : base(options)
     {
     }
-
+    /*
     public DbSet<UserEntity> User { get; set; }
     public DbSet<SsoSession> SsoSessions { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<BlacklistToken> BlacklistTokens { get; set; }
+    */
 }
