@@ -1,8 +1,12 @@
 ﻿'use client';
 import React, {useEffect, useState} from 'react';
-import {Box, Button, ScrollArea, Table, Text} from '@mantine/core';
+import {Box, Button, ColorSwatch, Group, ScrollArea, Table, Text} from '@mantine/core';
 import dayjs from 'dayjs';
 import {closeAllModals} from "@mantine/modals";
+import {addNotification} from "@/lib/utils/notificationsManager";
+import GetUserAvailability from "@/lib/widgets/Meetings/GetUserAvailability";
+import getPageName from "@/lib/utils/qrGenerator/getPageName";
+import SetUserAvailability from "@/lib/widgets/Meetings/SetUserAvailability";
 
 interface MeetingDateTimeProps {
     startDateTime: Date;
@@ -14,22 +18,92 @@ const SetMeetingTimeByUser: React.FC<MeetingDateTimeProps> = ({startDateTime, en
     const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
     const [isSelecting, setIsSelecting] = useState<boolean>(false);
     const [days, setDays] = useState<number>(0);
+    const link = getPageName(window.location.href)?.toString();
+    useEffect(() => {
+        const start = dayjs(startDateTime);
+        const end = dayjs(endDateTime);
+        const numberOfDays = end.diff(start, 'day') + 1;
+        setDays(numberOfDays);
+    }, [startDateTime, endDateTime]);
 
-    const handleSubmit = () => {
+    useEffect(() => {
+        const getAvailbility = async () => {
+            try {
+                if (link) {
+                    const response = await GetUserAvailability(link);
+                    if (response) {
+                        console.log(response);
+                        const availabilityString = response;
+                        const newSelectedSlots = new Set<string>();
+                        let index = 0;
 
-    }
+                        for (let day = 0; day < days; day++) {
+                            for (let interval = 0; interval < intervalsPerHour * 24; interval++) {
+                                if (isSlotWithinRange(day, interval)) {
+                                    if (index < availabilityString.length && availabilityString[index] === '1') {
+                                        newSelectedSlots.add(`${day}-${interval}`);
+                                    }
+                                    index++;
+                                }
+                            }
+                        }
+
+                        setSelectedSlots(newSelectedSlots);
+                    } else {
+                        addNotification({
+                            title: 'Wystąpił błąd',
+                            message: 'Wystąpił błąd przy pobieraniu czasu spotkania z serwera. Spróbuj ponownie.',
+                            color: 'red',
+                        });
+                    }
+                }
+            } catch (error) {
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Ładowanie nie zostało zakończone pomyślnie.',
+                    color: 'red',
+                });
+            }
+        };
+
+        getAvailbility();
+    }, [link, days, intervalsPerHour]);
+    const handleSubmit = async () => {
+        let availabilityArray: string[] = [];
+        for (let day = 0; day < days; day++) {
+            for (let interval = 0; interval < intervalsPerHour * 24; interval++) {
+                if (isSlotWithinRange(day, interval)) {
+                    const slotKey = `${day}-${interval}`;
+                    if (selectedSlots.has(slotKey)) {
+                        availabilityArray.push("1");
+                    } else {
+                        availabilityArray.push("0");
+                    }
+                }
+            }
+        }
+        const availabilityString = availabilityArray.join('');
+        if (link) {
+            try {
+                await SetUserAvailability(link, availabilityString);
+                addNotification({
+                    title: 'Sukces',
+                    message: 'Zmiany zostały pomyślnie zapisane.',
+                    color: 'green',
+                });
+            } catch {
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Ładowanie nie zostało zakończone pomyślnie.',
+                    color: 'red',
+                });
+            }
+        }
+    };
 
     const handleRejectChanges = () => {
         closeAllModals();
     };
-
-    useEffect(() => {
-        // Calculate the number of days between startDateTime and endDateTime
-        const start = dayjs(startDateTime);
-        const end = dayjs(endDateTime);
-        const numberOfDays = end.diff(start, 'day') + 1; // +1 to include both start and end days
-        setDays(numberOfDays);
-    }, [startDateTime, endDateTime]);
 
     const toggleSlot = (day: number, time: number) => {
         const slotKey = `${day}-${time}`;
@@ -62,14 +136,11 @@ const SetMeetingTimeByUser: React.FC<MeetingDateTimeProps> = ({startDateTime, en
     };
 
     const isSlotWithinRange = (day: number, time: number) => {
-        // Obliczamy czas rozpoczęcia dla danego dnia i czasu
         const slotStartDate = dayjs(startDateTime)
             .add(day, 'day')
             .startOf('day')
             .add(Math.floor(time / intervalsPerHour), 'hour')
             .add((time % intervalsPerHour) * (60 / intervalsPerHour), 'minute');
-
-        // Sprawdzamy, czy slot jest równy lub po starcie i równy lub przed końcem
         return (
             (slotStartDate.isSame(startDateTime) || slotStartDate.isAfter(startDateTime)) &&
             (slotStartDate.isSame(endDateTime) || slotStartDate.isBefore(endDateTime))
@@ -77,7 +148,7 @@ const SetMeetingTimeByUser: React.FC<MeetingDateTimeProps> = ({startDateTime, en
 
     const renderTimeSlots = () => {
         const timeSlots = [];
-        const hours = 24; // Godziny od 0 do 23
+        const hours = 24;
         for (let hour = 0; hour < hours; hour++) {
             for (let interval = 0; interval < intervalsPerHour; interval++) {
                 const time = hour * intervalsPerHour + interval;
@@ -138,6 +209,9 @@ const SetMeetingTimeByUser: React.FC<MeetingDateTimeProps> = ({startDateTime, en
                     <tbody>{renderTimeSlots()}</tbody>
                 </Table>
             </Box>
+            <Group style={{paddingBottom:10, alignItems: "center", width: "100%" }}>
+                <ColorSwatch color="#228be6" withShadow={false} /> Zaznaczone przez ciebie pasujące terminy spotkania
+            </Group>
             <Button onClick={handleSubmit}>Zatwierdź zmiany</Button>
             <Button variant="outline" color="red" onClick={handleRejectChanges}>Odrzuć zmiany</Button>
         </ScrollArea>

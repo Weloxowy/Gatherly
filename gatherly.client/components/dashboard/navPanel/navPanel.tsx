@@ -1,12 +1,12 @@
 ﻿"use client"
 import React, {useEffect, useState} from "react";
-import {Avatar, Group, Indicator, rem, Text, UnstyledButton} from '@mantine/core';
+import {ActionIcon, Avatar, Group, Indicator, rem, Text, UnstyledButton, useMantineColorScheme} from '@mantine/core';
 import {
     IconHome2,
     IconListCheck,
     IconLogout,
-    IconMail,
-    IconSettings,
+    IconMail, IconMoonStars,
+    IconSettings, IconSun,
     IconUsersGroup,
 } from '@tabler/icons-react';
 import classes from './NavPanel.module.css';
@@ -27,6 +27,8 @@ const NavPanel = () => {
     const [active, setActive] = useState('');
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [invitation, setInvitation] = useState<boolean>();
+    const { colorScheme, setColorScheme } = useMantineColorScheme();
+    const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
 
     useEffect(() => {
         const fetchInvitationStatus = async () => {
@@ -39,6 +41,11 @@ const NavPanel = () => {
         };
         fetchInvitationStatus();
     }, []);
+
+    const changeMode = () => {
+        setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
+        setDarkMode(!darkMode);
+    };
 
     useEffect(() => {
         (function() {
@@ -95,6 +102,7 @@ const NavPanel = () => {
             </div>
 
             <div className={classes.footer}>
+                <Group justify="space-between">
                 <UnstyledButton>
                 <Group p={rem(10)}>
                     <Avatar component={"a"} href="/settings" radius="xl" size="lg" src={"/avatars/"+ userInfo.avatarName +".png"} ></Avatar>
@@ -105,6 +113,14 @@ const NavPanel = () => {
                     </div>
                 </Group>
             </UnstyledButton>
+                <ActionIcon onClick={changeMode} variant="transparent" size="lg" aria-label="Change theme">
+                    {!darkMode ? (
+                        <IconMoonStars style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    ) : (
+                        <IconSun style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    )}
+                </ActionIcon>
+                </Group>
                 <a href="/settings" className={classes.link}>
                     <IconSettings className={classes.linkIcon} stroke={1.5}/>
                     <span>Ustawienia</span>

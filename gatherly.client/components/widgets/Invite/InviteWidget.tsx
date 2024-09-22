@@ -9,13 +9,16 @@ import GetPendingForMeeting from "@/lib/widgets/Meetings/GetPendingForMeeting";
 import { IconUserMinus } from "@tabler/icons-react";
 import DeleteInvitation from "@/lib/widgets/Meetings/DeleteInvitation";
 import DeleteUserMeeting from "@/lib/widgets/Meetings/DeleteUserMeeting";
-import {closeAllModals, modals} from "@mantine/modals";
+import {closeAllModals, closeModal, modals} from "@mantine/modals";
+import {addNotification} from "@/lib/utils/notificationsManager";
 
 interface MeetingDetailsProps {
     data: ExtendedMeeting;
 }
 
 const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
+    const [loading, setLoading] = useState(false);
+
     const form = useForm({
         initialValues: {
             email: '',
@@ -38,14 +41,24 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                         Aby ponownie użytkownik dołączył do spotkania, będzie konieczne ponowne wystosowanie zaproszenia.
                     </Text>
                 ),
-                labels: { confirm: 'Potwierdź', cancel: 'Anuluj' },
+                labels: { confirm: 'Potwierdź', cancel: 'Anuluj' }, confirmProps: {loading}, cancelProps: {loading},
                 onCancel: () => {
-                    closeAllModals();
+                    modals.close;
                     resolve(false);  // Return false to indicate cancellation
+                    addNotification({
+                        title: 'Wystąpił błąd',
+                        message: 'Użytkownik nie został usnięty ze spotkania.',
+                        color: 'red',
+                    });
                 },
                 onConfirm: () => {
-                    closeAllModals();
+                    modals.close;
                     resolve(true);  // Return true to indicate confirmation
+                    addNotification({
+                        title: 'Sukces',
+                        message: 'Użytkownik został usnięty ze spotkania.',
+                        color: 'green',
+                    });
                 },
             });
         });
@@ -60,10 +73,14 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
             try {
                 const get = await GetInvitesForMeeting(data.id);
                 setInvitedUsers(get);
-                console.log(get);
                 setRefreshData(false);
             } catch (error) {
-                console.error("Failed to fetch invited users", error);
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Nie udało się pobrać informacji o spotkaniu.',
+                    color: 'red',
+                });
+                //console.error("Failed to fetch invited users", error);
             }
         })();
     }, [data.id,refreshData]);
@@ -72,16 +89,21 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
         (async () => {
             try {
                 const get = await GetPendingForMeeting(data.id);
-                console.log(get);
                 setPendingUsers(get);
                 setRefreshData(false);
             } catch (error) {
-                console.error("Failed to fetch users with pending invitation", error);
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Nie udało się pobrać informacji o spotkaniu.',
+                    color: 'red',
+                });
+                //console.error("Failed to fetch users with pending invitation", error);
             }
         })();
     }, [data.id,refreshData]);
 
     const handleInviteForm = async (values: { email: string, meetingId: string }) => {
+        setLoading(true);
         try {
             const response = await CreateInvite(values.email, values.meetingId);
             switch (response.status) {
@@ -98,22 +120,13 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                     break;
             }
         } catch (error: any) {
-            console.error('Error in handleInviteForm:', error);
-            switch (error.code) {
-                case 200:
-                    form.setErrors({ email: 'Zaproszenie zostało wysłane' });
-                    break;
-                case 204:
-                    form.setErrors({ email: 'Zaproszenie już zostało wysłane' });
-                    break;
+            //console.error('Error in handleInviteForm:', error);
+            switch (error.status) {
                 case 401:
                     form.setErrors({ email: 'Nie masz uprawnień do zapraszania' });
                     break;
-                case 401:
-                    form.setErrors({ email: 'Zaproszenie już zostało wysłane' });
-                    break;
                 case 404:
-                    form.setErrors({ email: 'Użytkownik nie istnieje' });
+                    form.setErrors({ email: 'Użytkownik nie istnieje lub już jest w spotkaniu' });
                     break;
                 case 500:
                     form.setErrors({ email: 'Wystąpił wewnętrzny błąd serwera. Spróbuj ponownie później' });
@@ -123,9 +136,13 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                     break;
             }
         }
+        finally {
+            setLoading(false);
+        }
     };
 
     const handleDeleteInvitation = async (userId: string, userName: string) => {
+        setLoading(true);
         try {
             const confirmed = await handleOpenModal(userName);  // Await the result of the modal
             if (!confirmed) {
@@ -137,11 +154,20 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
             setPendingUsers((prev) => prev.filter((user) => user.personId !== userId));
 
         } catch (error) {
-            console.error('Error deleting invitation:', error);
+            addNotification({
+                title: 'Wystąpił błąd',
+                message: 'Zaproszenie nie zostało anulowane.',
+                color: 'red',
+            });
+            //console.error('Error deleting invitation:', error);
+        }
+        finally {
+            setLoading(false);
         }
     };
 
     const handleDeleteUserMeeting = async (userId: string, meetingId : string, userName : string) => {
+        setLoading(true);
         try {
             const confirmed = await handleOpenModal(userName);  // Await the result of the modal
             if (!confirmed) {
@@ -151,7 +177,15 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
             setRefreshData(true);
             setInvitedUsers((prev) => prev.filter((user) => user.personId !== userId));
         } catch (error) {
-            console.error('Error deleting invitation:', error);
+            addNotification({
+                title: 'Wystąpił błąd',
+                message: 'Użytkownik nie został usnięty ze spotkania.',
+                color: 'red',
+            });
+            //console.error('Error deleting invitation:', error);
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -164,7 +198,7 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                     placeholder="Adres email"
                     {...form.getInputProps('email')}
                 />
-                <Button type="submit" mt="md">Wyślij zaproszenie</Button>
+                <Button loading={loading} type="submit" mt="md">Wyślij zaproszenie</Button>
             </form>
 
             {invitedUsers.length > 0 && (
@@ -180,6 +214,7 @@ const InviteWidget: React.FC<MeetingDetailsProps> = ({ data }) => {
                                     </Tooltip>
                                     { data.isRequestingUserAnOwner && invite.personId !== data.ownerId ? (
                                         <ActionIcon
+                                            style={{zIndex: 100}}
                                             variant="filled"
                                             color="red"
                                             aria-label="Usuń zaproszenie"

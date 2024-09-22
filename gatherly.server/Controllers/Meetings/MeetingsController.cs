@@ -1,4 +1,5 @@
-﻿using gatherly.server.Entities.Meetings;
+﻿using System.Collections;
+using gatherly.server.Entities.Meetings;
 using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Mailing.MailEntity;
 using gatherly.server.Models.Meetings.Invitations;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using FluentNHibernate.Conventions;
 using gatherly.server.Models.Chat.Chat;
+using Microsoft.IdentityModel.Tokens;
 using NHibernate.Criterion;
 
 namespace gatherly.server.Controllers.Meetings;
@@ -184,6 +186,34 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
         {
             return Unauthorized("User is not the meeting owner");
         }
+        
+        if (meeting.StartOfTheMeeting.HasValue || meeting.EndOfTheMeeting.HasValue){
+        try
+        {
+            var originalStart = existingMeeting.StartOfTheMeeting;
+            var originalEnd = existingMeeting.EndOfTheMeeting;
+
+            var newStart = meeting.StartOfTheMeeting ?? existingMeeting.StartOfTheMeeting;
+            var newEnd = meeting.EndOfTheMeeting ?? existingMeeting.EndOfTheMeeting;
+
+            var startOffset = (int)((newStart - originalStart).TotalMinutes / 60);
+            var endOffset = (int)((newEnd - originalEnd).TotalMinutes / 60);
+            
+            var userMeetings = await _userMeetingService.GetAllInvites(meetingId);
+            foreach (var user in userMeetings)
+            {
+                if(startOffset != 0)
+                    await _userMeetingService.ChangeAvailbilityTimeFrames(user.Id, startOffset);
+                if(endOffset != 0)
+                    await _userMeetingService.ChangeAvailbilityTimeFrames(user.Id, endOffset);
+            }
+        }
+        catch
+        {
+            return StatusCode(500, "Internal server error");
+        }
+        }
+        
 // Aktualizacja strefy czasowej
         TimeZoneInfo newTimezone = meeting.TimeZone != null 
             ? TimeZoneInfo.FindSystemTimeZoneById(meeting.TimeZone) 
@@ -237,81 +267,6 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
         return StatusCode(500, $"Internal server error: {ex.Message}");
     }
 }
-
-    
-    /// <summary>
-    ///     Updates the basic information of an existing meeting, such as the name, description, and time zone.
-    /// </summary>
-    /// <remarks>
-    ///     This endpoint allows an authorized user to update the basic details of an existing meeting, including its name, description, and time zone.
-    /// </remarks>
-    /// <param name="meeting">The updated meeting information.</param>
-    /// <returns>A confirmation message indicating the result of the update.</returns>
-    /// <response code="200">Successfully updated the meeting.</response>
-    /// <response code="404">The specified meeting was not found.</response>
-    /// <response code="500">An internal server error occurred.</response>
-    [Authorize]
-    [HttpPost("updateBasic")]
-    public async Task<ActionResult> ChangeMeetingBasicData([FromBody] MeetingDTOUpdateBasic meeting)
-    {
-        try
-        {
-            var existingMeeting = await _meetingService.GetMeetingById(meeting.Id);
-            if (existingMeeting == null)
-            {
-                return NotFound("Meeting not found");
-            }
-
-            existingMeeting.MeetingName = meeting.MeetingName;
-            existingMeeting.Description = meeting.Description;
-            existingMeeting.TimeZone = TimeZoneInfo.FindSystemTimeZoneById(meeting.TimeZone);
-            
-            await _meetingService.UpdateAllMeetingData(meeting.Id, existingMeeting);
-
-            return Ok("Updated correctly");
-        }
-        catch
-        {
-            return StatusCode(500, "Internal server error");
-        }
-    }
-    
-    /// <summary>
-    ///     Updates the location details of an existing meeting, including the place name and geographical coordinates.
-    /// </summary>
-    /// <remarks>
-    ///     This endpoint allows an authorized user to update the location information of an existing meeting, such as the place name and its longitude and latitude.
-    /// </remarks>
-    /// <param name="meeting">The updated location details of the meeting.</param>
-    /// <returns>A confirmation message indicating the result of the update.</returns>
-    /// <response code="200">Successfully updated the meeting location.</response>
-    /// <response code="404">The specified meeting was not found.</response>
-    /// <response code="500">An internal server error occurred.</response>
-    [Authorize]
-    [HttpPost("updateLocation")]
-    public async Task<ActionResult> ChangeMeetingLocationData([FromBody] MeetingDTOUpdateLocation meeting)
-    {
-        try
-        {
-            var existingMeeting = await _meetingService.GetMeetingById(meeting.Id);
-            if (existingMeeting == null)
-            {
-                return NotFound("Meeting not found");
-            }
-
-            existingMeeting.PlaceName = meeting.PlaceName;
-            existingMeeting.Lon = meeting.Lon;
-            existingMeeting.Lat = meeting.Lat;
-
-            await _meetingService.UpdateAllMeetingData(meeting.Id, existingMeeting);
-
-            return Ok("Updated correctly");
-        }
-        catch
-        {
-            return StatusCode(500, "Internal server error");
-        }
-    }
     
     /// <summary>
     ///     Updates the start and end times of an existing meeting.
@@ -506,18 +461,19 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
     [Authorize]
     public async Task<ActionResult> DeleteMeeting(string meetingId)
     {
+        var meeting = await _meetingService.GetMeetingById(Guid.Parse(meetingId));
+        if (meeting == null)
+        {
+            return NotFound("Meeting not found");
+        }
+            
+        var owner = _tokenService.GetIdFromRequestCookie(HttpContext);
+        if (owner.IsNullOrEmpty() || !owner.Equals(meeting.OwnerId.ToString()))
+        {
+            return Unauthorized();
+        }
         try
         {
-            var meeting = await _meetingService.GetMeetingById(Guid.Parse(meetingId));
-            if (meeting == null)
-            {
-                return NotFound("Meeting not found");
-            }
-            var owner = _tokenService.GetIdFromRequestCookie(HttpContext);
-            if (!owner.Equals(meeting.OwnerId.ToString()))
-            {
-                return Unauthorized();
-            }
             var delete = await _meetingService.DeleteMeeting(Guid.Parse(meetingId));
             if (delete == false)
             {
@@ -526,14 +482,19 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
             var users = await _userMeetingService.GetAllInvites(Guid.Parse(meetingId));
             foreach (var user in users)
             {
-               await _mailService.SendMeetingDeletedAsync(user.Name,user.Email,meeting.MeetingName);
+                var userMeetingId = await _userMeetingService.GetUserMeetingId(user.UserId, Guid.Parse(meetingId));
+                if (userMeetingId != null)
+                {
+                    await _userMeetingService.DeleteUserMeetingEntity(user.UserId, Guid.Parse(meetingId));
+                    await _mailService.SendMeetingDeletedAsync(user.Name,user.Email,meeting.MeetingName); 
+                }
             }
             return Ok("Deleted successfully");
 
         }
-        catch
+        catch(Exception ex)
         {
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, "Internal server error"+ex);
         }
     }
 
@@ -768,6 +729,56 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
     }
     
     /// <summary>
+    ///     Removes user from an existing meeting.
+    /// </summary>
+    /// <remarks>
+    ///     This endpoint allows an user to leave meeting.
+    /// </remarks>
+    /// <param name="meetingId">Id of the meeting that the user will leave.</param>
+    /// <returns>A confirmation message indicating the result of the update.</returns>
+    /// <response code="200">Successfully removed user.</response>
+    /// <response code="404">The specified user-meeting pair was not found.</response>
+    /// <response code="500">An internal server error occurred.</response>
+    [Authorize]
+    [HttpDelete("meeting/leave")]
+    public async Task<ActionResult> LeaveMeeitng(Guid meetingId)
+    {
+        try
+        {
+            var userId = _tokenService.GetIdFromRequestCookie(HttpContext);
+            if(userId == null)
+            {
+                return NotFound("User not found");
+            }
+            
+            var existingMeeting = await _meetingService.GetMeetingById(meetingId);
+            if (existingMeeting == null)
+            {
+                return NotFound("Meeting not found");
+            }
+            if (existingMeeting.OwnerId == Guid.Parse(userId))
+            {
+                return NotFound("Owner cannot leave the meeting");
+            }
+            var newUserMeeting = await _userMeetingService.GetInviteByIds(meetingId, Guid.Parse(userId));
+            if (newUserMeeting == null)
+            {
+                return NotFound("Meeting not found");
+            }
+            await _userMeetingService.DeleteUserMeetingEntity(newUserMeeting.Id);
+            var user = _userService.GetUserInfo(Guid.Parse(userId));
+            await _chatService.SaveSystemMessageAsync(meetingId,
+                $"Użytkownik {user.Name} wyszedł ze spotkania.");
+
+            return Ok("Deleted correctly");
+        }
+        catch
+        {
+            return StatusCode(500, "Internal server error");
+        }
+    }
+    
+    /// <summary>
     ///     Changes the invitation status of a user in an existing meeting.
     /// </summary>
     /// <remarks>
@@ -782,7 +793,7 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
     /// <response code="404">The specified user-meeting pair was not found.</response>
     /// <response code="500">An internal server error occurred.</response>
     [Authorize]
-    [HttpGet("meeting/setStatus")]
+    [HttpPut("meeting/setStatus")]
     public async Task<ActionResult> SetInvitationStatus(Guid meetingId,InvitationStatus invitationStatus)
     {
         try
@@ -852,7 +863,68 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
         }
     }
     
-    /*
+    
+     /// <summary>
+    ///     Changes the invitation status of a user in an existing meeting.
+    /// </summary>
+    /// <remarks>
+    ///     This endpoint allows a user to update their invitation status in a meeting, 
+    ///     such as accepting, rejecting, or setting it as tentative.
+    /// </remarks>
+    /// <param name="meetingId">ID of meeting.</param>
+    /// <param name="invitationStatus">The new status of the invitation. It must be a valid value from the InvitationStatus enum.</param>
+    /// <returns>A confirmation message indicating the result of the status update.</returns>
+    /// <response code="200">Successfully updated the invitation status.</response>
+    /// <response code="400">The specified invitation status is invalid.</response>
+    /// <response code="404">The specified user-meeting pair was not found.</response>
+    /// <response code="500">An internal server error occurred.</response>
+    [Authorize]
+    [HttpPut("meeting/setAvailability")]
+    public async Task<ActionResult> SetAvailability(Guid meetingId,string availability)
+    {
+        try
+        {
+            var userId = _tokenService.GetIdFromRequestCookie(HttpContext);
+            if(userId == null)
+            {
+                return NotFound("User not found");
+            }
+            var userMeetingId = await _userMeetingService.GetUserMeetingId(Guid.Parse(userId), meetingId);
+            if (userMeetingId.HasValue == false)
+            {
+                return NotFound("Meeting not found");
+            }
+
+            int byteCount = availability.Length;
+            var availabilityBits = availability.ToCharArray();
+            byte[] result = new byte[byteCount];
+            // Przekształcenie liczby całkowitej na tablicę bajtów
+            for (int i = 0; i < byteCount; i++)
+            {
+                if (availabilityBits[i] == '1')
+                {
+                    result[i] = (byte)(1);
+                }
+                else
+                {
+                    result[i] = (byte)(0);
+                }
+            }
+            
+           
+            await _userMeetingService.ChangeAvailbilityTimes(userMeetingId.Value,result);
+            //var user = _userService.GetUserInfo(Guid.Parse(userId));
+            //await _chatService.SaveSystemMessageAsync(meetingId,
+            //$"Użytkownik {user.Name} zmienił status na \"{invitationStatus}\".");
+
+            return Ok("Status updated correctly");
+        }
+        catch
+        {
+            return StatusCode(500, "Internal server error");
+        }
+    }
+    
     /// <summary>
     ///     Changes the invitation status of a user in an existing meeting.
     /// </summary>
@@ -868,21 +940,17 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
     /// <response code="404">The specified user-meeting pair was not found.</response>
     /// <response code="500">An internal server error occurred.</response>
     [Authorize]
-    [HttpGet("meeting/setAvailbilityTimes")]
-    public async Task<ActionResult> GetInvitationStatus(Guid meetingId)
+    [HttpGet("meeting/getAvailability/{meetingId}")]
+    public async Task<ActionResult> GetAvailbility(Guid meetingId)
     {
         try
-        {ChangeAvailbilityTimes
+        {
             var userId = _tokenService.GetIdFromRequestCookie(HttpContext);
             if(userId == null)
             {
                 return NotFound("User not found");
             }
-            var userMeetingStatus = await _userMeetingService.GetUserMeetingStatus(Guid.Parse(userId), meetingId);
-            if (userMeetingStatus.HasValue == false)
-            {
-                return NotFound("Meeting not found");
-            }
+            var userMeetingStatus = await _userMeetingService.GetUserTimes(Guid.Parse(userId), meetingId);
             return Ok(userMeetingStatus);
         }
         catch
@@ -890,5 +958,50 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
             return StatusCode(500, "Internal server error");
         }
     }
-    */
+    
+    /// <summary>
+    ///     Changes the invitation status of a user in an existing meeting.
+    /// </summary>
+    /// <remarks>
+    ///     This endpoint allows a user to update their invitation status in a meeting, 
+    ///     such as accepting, rejecting, or setting it as tentative.
+    /// </remarks>
+    /// <param name="meetingId">ID of meeting.</param>
+    /// <param name="invitationStatus">The new status of the invitation. It must be a valid value from the InvitationStatus enum.</param>
+    /// <returns>A confirmation message indicating the result of the status update.</returns>
+    /// <response code="200">Successfully updated the invitation status.</response>
+    /// <response code="400">The specified invitation status is invalid.</response>
+    /// <response code="404">The specified user-meeting pair was not found.</response>
+    /// <response code="500">An internal server error occurred.</response>
+    [Authorize]
+    [HttpGet("meeting/getAllAvailability/{meetingId}")]
+    public async Task<ActionResult> GetAllAvailbility(Guid meetingId)
+    {
+        try
+        {
+            var userId = _tokenService.GetIdFromRequestCookie(HttpContext);
+            if(userId == null)
+            {
+                return NotFound("User not found");
+            }
+
+            var meeting = await _meetingService.GetMeetingById(meetingId);
+            if (meeting == null)
+            {
+                return NotFound("Meeting not found");
+            }
+
+            if (!meeting.OwnerId.Equals(Guid.Parse(userId)))
+            {
+                return Unauthorized("You are not an owner of the meeting.");
+            }
+            
+            var userMeetingStatus = await _userMeetingService.GetAllUserTimes(meetingId,Guid.Parse(userId));
+            return Ok(userMeetingStatus);
+        }
+        catch
+        {
+            return StatusCode(500, "Internal server error");
+        }
+    }
 }

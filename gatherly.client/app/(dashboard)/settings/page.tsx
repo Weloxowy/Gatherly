@@ -3,26 +3,36 @@ import React, {useEffect, useState} from "react";
 import classes from "@/app/(dashboard)/home/Home.module.css";
 import {Avatar, Button, Group, Paper, Space, Text, Title} from "@mantine/core";
 import {closeAllModals, modals, openModal} from "@mantine/modals";
-import NewMeeting from "@/components/dashboard/NewMeeting/NewMeeting";
 import ChangeBasicUserData from "@/components/widgets/Settings/ChangeBasicUserData";
 import JwtTokenValid from "@/lib/auth/GetUserInfo";
 import axiosInstance from "@/lib/utils/AxiosInstance";
 import LogoutUser from "@/lib/auth/logoutUser";
+import {addNotification} from "@/lib/utils/notificationsManager";
 
 export default function Settings() {
-    const [mode, setMode] = useState('');
+    const [loading, setLoading] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [avatar, setAvatar] = useState('');
 
     useEffect(() => {
         const fetchUserInfo = async () => {
-            const x = await JwtTokenValid();
-            if (x) {
-                setName(x.name);
-                setEmail(x.email);
-                setAvatar(x.avatarName);
+            try{
+                const x = await JwtTokenValid();
+                if (x) {
+                    setName(x.name);
+                    setEmail(x.email);
+                    setAvatar(x.avatarName);
+                }
             }
+            catch{
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Nie udało się pobrać informacji.',
+                    color: 'red',
+                });
+            }
+
         };
         fetchUserInfo();
     }, []);
@@ -43,10 +53,15 @@ export default function Settings() {
         children: (<Text size="sm">
             Aby usunąć profil kliknij przycisk potwierdź. Operacja jest nieodwracalna.
         </Text>),
-        labels: {confirm: 'Potwierdź', cancel: 'Anuluj'},
+        labels: {confirm: 'Potwierdź', cancel: 'Anuluj'}, confirmProps: { loading },
         onCancel: () => closeAllModals(),
         onConfirm: () => {
-            axiosInstance.delete('/User/profile').then(r => r.status);
+            setLoading(true);
+            axiosInstance.delete('/User/profile').catch(()=> addNotification({
+                title: 'Wystąpił błąd',
+                message: 'Nie udało się zaktualizować profilu.',
+                color: 'red',
+            }));
             closeAllModals();
             LogoutUser();
         },
@@ -71,7 +86,7 @@ export default function Settings() {
             <Space h="lg"/>
             <Group>
                 <Button onClick={handleChangeDataModal}>Zmień podstawowe dane konta</Button>
-                <Button onClick={handleDeleteAccountModal}>Usuń konto</Button>
+                <Button color={"red"} onClick={handleDeleteAccountModal}>Usuń konto</Button>
             </Group>
         </Paper>
     </div>);

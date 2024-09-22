@@ -1,11 +1,12 @@
 ﻿import React, {useState} from "react";
-import {Anchor, Button, FocusTrap, Group, PinInput, TextInput} from "@mantine/core";
+import {Anchor, Button, Group, PinInput, TextInput} from "@mantine/core";
 import {useForm} from "@mantine/form";
 import sendSsoCode from "../../lib/auth/sendSsoCode";
 import sendReturnedCode from "../../lib/auth/sendReturnedCode";
 import {AuthProps} from "@/lib/interfaces/types";
 
 const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
+    const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<number>(1);
     const [email, setEmail] = useState('');
     const form1 = useForm({
@@ -25,6 +26,7 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
     });
 
     const handleSubmitForm1 = async (values: { email: string }) => {
+        setLoading(true);
         try {
             const res = await sendSsoCode(values.email);
             setEmail(values.email);
@@ -46,10 +48,14 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                     break;
             }
         }
+        finally {
+            setLoading(false);
+        }
     };
 
 
     const handleSubmitForm2 = async (values: { code: string }) => {
+        setLoading(true);
         try {
             await sendReturnedCode(email, values.code);
             window.location.href = "/home";
@@ -70,6 +76,9 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                     break;
             }
         }
+        finally {
+            setLoading(false);
+        }
     };
 
 
@@ -87,18 +96,21 @@ const LoginByCode: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                             Odzyskaj konto
                         </Anchor>
                     </Group>
-                    <Button fullWidth mt="lg" type="submit">
-                        Zaloguj
+                    <Button loading={loading} fullWidth mt="lg" type="submit">
+                        Wyślij kod
                     </Button>
                 </form>) : (<form onSubmit={form2.onSubmit(handleSubmitForm2)}>
+                <div style={{display: 'flex', justifyContent: 'center'}}>
                     <PinInput size="md" key={form2.key('code')}
                               {...form2.getInputProps('code')} length={6} mask type="number" inputType="number"
-                              inputMode="numeric"/>
-                    <Button fullWidth mt="lg" type="submit">
+                              inputMode="numeric"
+                    />
+                </div>
+                    <Button loading={loading} fullWidth mt="lg" type="submit">
                         Zatwierdź kod
                     </Button>
-                </form>)}
-        </>);
+            </form>)}
+    </>);
 };
 
 export default LoginByCode;

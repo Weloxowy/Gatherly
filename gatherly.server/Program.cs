@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text;
 using DotNetEnv;
+using FluentAssertions.Common;
 using FluentMigrator.Runner;
 using gatherly.server;
 using gatherly.server.Models.Authentication.RecoverySession;
@@ -56,7 +57,10 @@ builder.Services.AddScoped<IChatService, ChatService>();
 // Add controllers and endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.KeepAliveInterval = TimeSpan.FromMinutes(4); // Zwiêksz czas miêdzy pingami
+});
 
 // Konfiguracja Swaggera
 builder.Services.AddSwaggerGen(c =>

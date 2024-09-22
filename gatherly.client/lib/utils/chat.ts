@@ -1,7 +1,9 @@
 ﻿import * as signalR from "@microsoft/signalr";
 
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/chathub")
+    .withUrl("/chathub",{
+        transport: signalR.HttpTransportType.WebSockets
+    })
     .build();
 
 connection.on("ReceiveMessage", (message) => {

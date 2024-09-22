@@ -27,7 +27,7 @@ export default function Home() {
 
     const handleOpenModal = () => {
         openModal({
-            title: 'Nowe spotkanie',
+            title: <Title order={2}>Nowe spotkanie</Title>,
             size: '70%',
             radius: 10,
             children: (

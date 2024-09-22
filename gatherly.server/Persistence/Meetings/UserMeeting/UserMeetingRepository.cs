@@ -1,4 +1,5 @@
-﻿using FluentEmail.Core;
+﻿using System.Text;
+using FluentEmail.Core;
 using gatherly.server.Entities.Meetings;
 using gatherly.server.Models.Meetings.UserMeeting;
 using NHibernate;
@@ -310,6 +311,30 @@ public class UserMeetingRepository : IUserMeetingRepository
         }
     }
     
+    public async Task<bool> DeleteUserMeetingEntity(Guid userId, Guid meetingId)
+    {
+        using (var session = NHibernateHelper.OpenSession())
+        {
+            using (var transaction = session.BeginTransaction())
+            {
+                try
+                {
+                    var userMeeting = session.Query<Models.Meetings.UserMeeting.UserMeeting>()
+                        .Where(um => um.MeetingId == meetingId && um.UserId == userId).FirstOrDefaultAsync();
+                    if (userMeeting == null) return false;
+                    await session.DeleteAsync(userMeeting);
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    return false;
+                }
+            }
+        }
+    }
+    
     public async Task<Guid?> GetUserMeetingId(Guid userId, Guid meetingId)
     {
         using (var session = NHibernateHelper.OpenSession())
@@ -467,6 +492,68 @@ public class UserMeetingRepository : IUserMeetingRepository
         {
             return await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
                 .AnyAsync(x => x.UserId == userId && x.MeetingId == meetingId);
+        }
+    }
+    
+    public async Task<string?> GetUserTimes(Guid userId, Guid meetingId)
+    {
+        using (var session = NHibernateHelper.OpenSession())
+        {
+            var userMeeting = await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
+                .Where(x => x.MeetingId == meetingId && x.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            if (userMeeting == null) return null;
+            if (userMeeting.Availability is { } availabilityBytes)
+            {
+                StringBuilder binaryString = new StringBuilder();
+
+                foreach (var b in availabilityBytes)
+                {
+                    // Konwersja każdego bajtu na binarną reprezentację
+                    binaryString.Append(Convert.ToString(b, 2).PadLeft(1, '0'));
+                }
+
+                return binaryString.ToString();
+            }
+        
+            return null;
+        }
+    }
+    
+    public async Task<List<AvailabilityTimesDTO>> GetAllUserTimes(Guid meetingId, Guid ownerId)
+    {
+        using (var session = NHibernateHelper.OpenSession())
+        {
+            var userMeeting = await session.Query<Models.Meetings.UserMeeting.UserMeeting>()
+                .Where(x => x.MeetingId == meetingId)
+                .ToListAsync();
+
+            if (userMeeting == null) return null;
+            
+            var availabilityList = new List<AvailabilityTimesDTO>();
+            foreach (var user in userMeeting)
+            {
+                if (user.Availability is { } availabilityBytes)
+                {
+                    StringBuilder binaryString = new StringBuilder();
+
+                    foreach (var b in availabilityBytes)
+                    {
+                        // Konwersja każdego bajtu na binarną reprezentację
+                        binaryString.Append(Convert.ToString(b, 2).PadLeft(1, '0'));
+                    }
+
+                    availabilityList.Add(new AvailabilityTimesDTO()
+                    {
+                        Availability = binaryString.ToString(),
+                        UserId = user.UserId,
+                        IsOwner = user.UserId.Equals(ownerId) ? true : false
+                    });
+                }
+            }
+
+            return availabilityList;
         }
     }
 }

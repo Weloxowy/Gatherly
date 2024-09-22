@@ -42,6 +42,10 @@ public class UserMeetingService : IUserMeetingService
     {
         return _userMeetingRepository.DeleteUserMeetingEntity(userMeetingId);
     }
+    public Task<bool> DeleteUserMeetingEntity(Guid userId, Guid meetingId)
+    {
+        return _userMeetingRepository.DeleteUserMeetingEntity(userId, meetingId);
+    }
     public Task<Guid?> GetUserMeetingId(Guid userId, Guid meetingId)
     {
         return _userMeetingRepository.GetUserMeetingId(userId, meetingId);
@@ -84,6 +88,16 @@ public class UserMeetingService : IUserMeetingService
     public Task<bool> IsUserInMeeting(Guid userId, Guid meetingId)
     {
         return _userMeetingRepository.IsUserInMeeting(userId, meetingId);
+    }
+    
+    public Task<string?> GetUserTimes(Guid userId, Guid meetingId)
+    {
+        return _userMeetingRepository.GetUserTimes(userId, meetingId);
+    }
+
+    public Task<List<AvailabilityTimesDTO>> GetAllUserTimes(Guid meetingId, Guid ownerId)
+    {
+        return _userMeetingRepository.GetAllUserTimes(meetingId,ownerId);
     }
 
 }

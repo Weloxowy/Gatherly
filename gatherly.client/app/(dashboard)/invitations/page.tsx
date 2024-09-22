@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { InvitationMeeting } from "@/lib/interfaces/types";
 import getInvitationsByUser from "@/lib/widgets/Invitations/GetInvitationsByUser";
 import InvitationItem from "@/components/dashboard/InvitationItem/InvitationItem";
+import {addNotification} from "@/lib/utils/notificationsManager";
 
 export default function Invitations() {
     const [invitations, setInvitations] = useState<InvitationMeeting[]>([]);
@@ -17,7 +18,12 @@ export default function Invitations() {
                 const response = await getInvitationsByUser();
                 setInvitations(response);
             } catch (error) {
-                console.error("Failed to get invitations for logged user", error);
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Zaproszenia nie zostały załadowane pomyślnie.',
+                    color: 'red',
+                });
+                //console.error("Failed to get invitations for logged user", error);
             } finally {
                 setLoading(false);
             }

@@ -36,7 +36,7 @@ public class ChatRepository : IChatRepository
                     message => message.SenderId,
                     userEntity => userEntity.Id,
                     (message, userEntity) => new { Message = message, UserEntity = userEntity })
-                .Take(100)
+                .Take(20)
                 .ToListAsync();
             messages.Reverse();
             var list = new List<MessagesDTO>();
@@ -63,7 +63,6 @@ public class ChatRepository : IChatRepository
                     UserAvatar = message.UserEntity.AvatarName
                 });
             }
-            
             return list;
         }
     }

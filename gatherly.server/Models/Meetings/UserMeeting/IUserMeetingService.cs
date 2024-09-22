@@ -11,6 +11,7 @@ public interface IUserMeetingService
     public Task<List<UserEntityDTOMeetingInfo>> GetAllRejectedInvites(Guid meetingId);
     public Task<UserMeeting> CreateNewUserMeetingEntity(UserMeetingDTOCreate userMeetingDtoCreate);
     public Task<bool> DeleteUserMeetingEntity(Guid userMeetingId);
+    public Task<bool> DeleteUserMeetingEntity(Guid userId, Guid meetingId);
     public Task<Guid?> GetUserMeetingId(Guid userId, Guid meetingId);
     public Task<InvitationStatus?> GetUserMeetingStatus(Guid userId, Guid meetingId);
     public Task<UserMeeting> ChangeInvitationStatus(Guid userMeetingId, InvitationStatus status);
@@ -20,4 +21,7 @@ public interface IUserMeetingService
     public Task<List<MeetingDTOInfo>> GetAllMeetingsByUserId(Guid userId);
     public Task<UserMeeting> GetInviteByIds(Guid meetingId, Guid userId);
     public Task<bool> IsUserInMeeting(Guid userId, Guid meetingId);
+    public Task<string?> GetUserTimes(Guid userId, Guid meetingId);
+    public Task<List<AvailabilityTimesDTO>> GetAllUserTimes(Guid meetingId, Guid ownerId);
+
 }

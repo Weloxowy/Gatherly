@@ -15,6 +15,7 @@ import ChatWidget from "@/components/widgets/Chat/ChatWidget";
 import {openModal} from "@mantine/modals";
 import InviteWidget from "@/components/widgets/Invite/InviteWidget";
 import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
+import {addNotification} from "@/lib/utils/notificationsManager";
 
 const MeetingMap = dynamic(() => import('@/components/widgets/MeetingMap/MeetingMapWidget'), {
     ssr: false
@@ -23,20 +24,8 @@ const MeetingMap = dynamic(() => import('@/components/widgets/MeetingMap/Meeting
 export default function Meeting() {
     const {id} = useParams();
     const [data, setData] = useState<ExtendedMeeting | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState(false);
     const [loading, setLoading] = useState<boolean>(true);
-    const [opened, { open, close }] = useDisclosure(false);
-    const handleOpenModal = () => {
-        openModal({
-            title: <Title order={3}>Zaproś gości</Title>,
-            size: '70%',
-            radius: 10,
-            children: (
-                //@ts-ignore
-                <InviteWidget data={data}/>
-            ),
-        });
-    };
 
     useEffect(() => {
         const fetchMeeting = async () => {
@@ -50,10 +39,15 @@ export default function Meeting() {
                     if (meeting) {
                         setData(meeting);
                     } else {
-                        setError('Meeting not found');
+                        addNotification({
+                            title: 'Wystąpił błąd',
+                            message: 'Spotkanie nie zostało znalezione.',
+                            color: 'red',
+                        });
+                        setError(true);
                     }
                 } catch (err) {
-                    setError('Failed to load');
+                    setError(true);
                 } finally {
                     setLoading(false);
                 }
@@ -71,15 +65,36 @@ export default function Meeting() {
             loaderProps={{ color: 'violet', type: 'bars' }}
         />
     </div>;
-    if (error) return <div>{error}</div>;
+
+    if (error) return <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100%',
+        minHeight: '100%',
+    }}>
+        Spotkanie nie zostało znalezione. Spróbuj ponownie.
+    </div>;
+
+    const handleOpenModal = () => {
+        openModal({
+            title: <Title order={3}>Zaproś gości</Title>,
+            size: '70%',
+            radius: 10,
+            children: (
+                //@ts-ignore
+                <InviteWidget data={data}/>
+            ),
+        });
+    };
 
     return (<div className={classes.whole}>
-        <div className={classes.name}>
-            <Title order={2}>{data?.name}</Title>
+            <div className={classes.name}>
+                <Title order={2}>{data?.name}</Title>
 
-            <>Spotkanie utworzył(a): <b>{data?.ownerName}</b> | {dayjs(//@ts-ignore
-                                                                    data?.creationTime).format("DD.MM.YYYY")}</>
-        </div>
+                <>Spotkanie utworzył(a): <b>{data?.ownerName}</b> | {dayjs(//@ts-ignore
+                    data?.creationTime).format("DD.MM.YYYY")}</>
+            </div>
         <Container my="lg" m={0}>
             <SimpleGrid cols={{base: 1, sm: 2}} spacing="md">
                 <Paper radius="lg" shadow="lg" p="lg" style={{height: "82vh", width: "100%", display: 'flex', flexDirection: 'column'}}>

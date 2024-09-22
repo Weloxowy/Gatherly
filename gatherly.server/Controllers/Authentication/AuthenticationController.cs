@@ -67,7 +67,7 @@ public class AuthenticationController : ControllerBase
     /// <response code="500">Internal server error occurred.</response>
     [AllowAnonymous]
     [HttpPost("login/code/send")]
-    public IActionResult SendSsoCode([FromBody] string email)
+    public async Task<IActionResult> SendSsoCode([FromBody] string email)
     {
         var user = _userService.GetUserInfo(email);
         if (user == null) return NotFound("User profile not found");
@@ -75,7 +75,7 @@ public class AuthenticationController : ControllerBase
         {
             var ssoCode = _ssoSessionService.CreateSso(user.Id, email);
             if (ssoCode == null) return NotFound("User profile not found");
-            _mailEntityService.SendSsoCodeEmailAsync(user, ssoCode);
+            await _mailEntityService.SendSsoCodeEmailAsync(user, ssoCode);
             return Ok("Email was send");
         }
         catch (Exception exception)

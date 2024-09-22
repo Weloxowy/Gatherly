@@ -1,4 +1,4 @@
-﻿import React from "react";
+﻿import React, {useState} from "react";
 import {Anchor, Button, Group, PasswordInput, TextInput} from "@mantine/core";
 import {useForm} from "@mantine/form";
 
@@ -6,6 +6,8 @@ import registerUser from "@/lib/auth/RegisterUser";
 import {AuthProps} from "@/lib/interfaces/types";
 
 const Register: React.FC<AuthProps> = ({setAuthMethod, options}) => {
+    const [loading, setLoading] = useState(false);
+
     const form = useForm({
         initialValues: {
             name: '', email: '', password: '',
@@ -16,6 +18,7 @@ const Register: React.FC<AuthProps> = ({setAuthMethod, options}) => {
     });
 
     const handleSubmitForm = async (values: { name: string, email: string, password: string }) => {
+        setLoading(true);
         try {
             const res = await registerUser(values.name, values.email, values.password);
             window.location.href = "/home";
@@ -33,6 +36,9 @@ const Register: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                     break;
             }
         }
+        finally {
+            setLoading(false);
+        }
     };
 
     return (<>
@@ -49,7 +55,7 @@ const Register: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                         Odzyskaj konto
                     </Anchor>
                 </Group>
-                <Button fullWidth mt="lg" type="submit">
+                <Button loading={loading} fullWidth mt="lg" type="submit">
                     Zarejestruj się
                 </Button>
             </form>

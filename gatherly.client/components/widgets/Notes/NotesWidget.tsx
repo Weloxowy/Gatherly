@@ -3,6 +3,7 @@ import { Button, Checkbox, Group, ScrollArea, TextInput, Transition } from "@man
 import classes from './NotesWidget.module.css';
 import NotesGet from "@/lib/widgets/Notes/NotesGet";
 import NotesPost from "@/lib/widgets/Notes/NotesPost";
+import {addNotification} from "@/lib/utils/notificationsManager";
 interface Note {
     Id: string;
     Text: string;
@@ -14,16 +15,11 @@ const NotesWidget = () => {
     const [newNoteText, setNewNoteText] = useState<string>("");
     const notesRef = useRef<Note[]>(notes);
 
-    // Pobieranie notatek
     useEffect(() => {
         const fetchNotes = async () => {
             try {
                 const response = await NotesGet();
-                //console.log("Odpowiedź z serwera:", response);
-
-                // Sprawdzamy, czy odpowiedź zawiera oczekiwane dane
                 if (response && response.Notes && Array.isArray(response.Notes.Note)) {
-                    // Mapowanie danych na odpowiedni format
                     const fetchedNotes = response.Notes.Note.map((note: any) => ({
                         Id: note.Id,
                         Text: note.Text,
@@ -32,9 +28,19 @@ const NotesWidget = () => {
                     setNotes(fetchedNotes);
                     notesRef.current = fetchedNotes;
                 } else {
+                    addNotification({
+                        title: 'Wystąpił błąd',
+                        message: 'Wystąpił błąd z notatkami. Skontaktuj się z administratorem w celu naprawy błędu.',
+                        color: 'red',
+                    });
                     //console.error("Niepoprawny format danych", response);
                 }
             } catch (error) {
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Zmiany nie zostały zapisane pomyślnie.',
+                    color: 'red',
+                });
                 //console.error("Failed to get notes for logged user", error);
             }
         };
@@ -54,11 +60,15 @@ const NotesWidget = () => {
                 //console.log("Sending JSON data to backend:", jsonData);
                 await NotesPost(jsonData);
             } catch (error) {
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Notatki nie zostały przesłane.',
+                    color: 'red',
+                });
                 //console.error("Failed to put notes for logged user", error);
             }
         };
         return () => {
-           //console.log("Wykonuję sendNotes przy odmontowywaniu komponentu");
             sendNotes();
         };
     }, [notes]);

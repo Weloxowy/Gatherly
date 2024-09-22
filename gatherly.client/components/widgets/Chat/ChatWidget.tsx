@@ -1,11 +1,11 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
 import axios from 'axios';
-import { Avatar, Button, Group, ScrollArea, TextInput, Tooltip } from '@mantine/core';
+import {Avatar, Button, ColorSwatch, Group, LoadingOverlay, ScrollArea, TextInput, Tooltip} from '@mantine/core';
 import dayjs from 'dayjs';
 import classes from './ChatWidget.module.css';
 import adjustTimeToLocal from '@/lib/widgets/Meetings/adjustTimeToLocal';
-import { IconSend } from '@tabler/icons-react';
+import {IconSend, IconStar} from '@tabler/icons-react';
 import { Person } from '@/lib/interfaces/types';
 
 const axiosInstance = axios.create({
@@ -32,11 +32,10 @@ const ChatWidget = ({ meetingId, usersList }: { meetingId: string; usersList: Pe
     const [value, setValue] = useState('');
     const viewport = useRef<HTMLDivElement>(null);
     const [errorState, setErrorState] = useState<ErrorTypes>(ErrorTypes.none);
-
     const [suggestions, setSuggestions] = useState<Person[]>([]); // Lista sugestii użytkowników
     const [showAutocomplete, setShowAutocomplete] = useState(false); // Wyświetlanie listy autouzupełniania
     const [cursorPos, setCursorPos] = useState(0); // Pozycja kursora dla zastąpienia tekstu
-
+    const [loading, setLoading] = useState(false);
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = event.currentTarget.value;
         setValue(inputValue);
@@ -92,13 +91,15 @@ const ChatWidget = ({ meetingId, usersList }: { meetingId: string; usersList: Pe
             connection
                 .start()
                 .then(() => {
-                    connection.send('LoadMessageHistory');
+                    connection.send('LoadMessageHistory').then(() => setLoading(true));
 
                     connection.on('ReceiveMessage', (user: string, message: Message) => {
+                        setLoading(false);
                         setMessages((prevMessages) => [...prevMessages, message]);
                     });
 
                     connection.on('ReceiveMessageHistory', (history: Message[]) => {
+                        setLoading(false);
                         setMessages(history);
                         setErrorState(ErrorTypes.none);
                     });
@@ -156,6 +157,12 @@ const ChatWidget = ({ meetingId, usersList }: { meetingId: string; usersList: Pe
             <h1>Chat</h1>
             <ScrollArea h={320} viewportRef={viewport} className={classes.scrollArea} scrollbars="y">
                 <div className={classes.messagesContainer}>
+                    <LoadingOverlay
+                        visible={loading}
+                        zIndex={10}
+                        overlayProps={{ radius: 'sm', blur: 2 }}
+                        loaderProps={{ color: 'violet', type: 'bars' }}
+                    />
                     {messages.map((msg, index) => (
                         <Group key={index}>
                             {msg.typesOfMessage !== 2 ? (
@@ -167,7 +174,16 @@ const ChatWidget = ({ meetingId, usersList }: { meetingId: string; usersList: Pe
                                 >
                                     <Avatar src={`/avatars/${msg.userAvatar}.png`} />
                                 </Tooltip>
-                            ) : null}
+                            ) :(
+                                <Tooltip
+                                    withArrow
+                                    label={`System | ${dayjs(msg.timestamp).format(
+                                        'DD.MM HH:mm UTC'
+                                    )}`}
+                                >
+                                    <Avatar color={"violet"}><IconStar size={16}/></Avatar>
+                                </Tooltip>
+                            )}
                             <p
                                 key={index}
                                 className={

@@ -89,3 +89,19 @@ export interface UserInfo{
     email : string,
     avatarName : string
 }
+
+//Errors for creating and updating meeting
+export interface MeetingErrors {
+    title?: string;
+    desc?: string;
+    startDate?: string;
+    endDate?: string;
+    address?: string;
+    timezone?: string;
+}
+
+export interface Notifiaction {
+    title: string;
+    message: string;
+    color: string;
+}

@@ -34,7 +34,7 @@ public class MailEntityRepository : IMailEntityRepository
         {
             var response = await _fluentEmail.To(userMail)
                 .Subject("Recovery of your account")
-                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Persistence/Mailing/EmailTemplates/DeletedMeetingInfo.cshtml", new
+                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Content/EmailTemplates/DeletedMeetingInfo.cshtml", new
                 {
                     Name = userName,
                     MeetingName = meetingName
@@ -67,7 +67,7 @@ public class MailEntityRepository : IMailEntityRepository
         {
             var response = await _fluentEmail.To(user.Email)
                 .Subject("Recovery of your account")
-                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Persistence/Mailing/EmailTemplates/RecoverAccount.cshtml", new
+                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Content/EmailTemplates/RecoverAccount.cshtml", new
                 {
                     Name = user.Name,
                     Code = session.Id
@@ -91,6 +91,7 @@ public class MailEntityRepository : IMailEntityRepository
         var portNumber = Env.GetInt("PORT_NUMBER");
         var mailLogin = Env.GetString("MAIL_LOGIN");
         var mailPassword = Env.GetString("MAIL_PASSWORD");
+        Console.WriteLine($"SMTP_ADDRESS: {smtpAddress}, PORT_NUMBER: {portNumber}, MAIL_LOGIN: {mailLogin}, MAIL_PASSWORD: {mailPassword}");
 
         if (string.IsNullOrEmpty(smtpAddress) || portNumber == 0 || string.IsNullOrEmpty(mailLogin) || string.IsNullOrEmpty(mailPassword))
         {
@@ -101,7 +102,7 @@ public class MailEntityRepository : IMailEntityRepository
         {
             var response = await _fluentEmail.To(ssoSession.UserEmail)
                 .Subject("Your SSO Verification Code")
-                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Persistence/Mailing/EmailTemplates/SsoCode.cshtml", new
+                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Content/EmailTemplates/SsoCode.cshtml", new
                 {
                     Name = user.Name,
                     VerificationCode = ssoSession.VerificationCode
@@ -115,7 +116,7 @@ public class MailEntityRepository : IMailEntityRepository
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to send email: {ex.Message}");
-            throw new Exception("There was an error sending the email.", ex);
+            throw new Exception("There was an error sending the email." + ex, ex);
         }
     }
 }

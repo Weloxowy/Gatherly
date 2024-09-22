@@ -14,6 +14,7 @@ import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
 import {IconCalendarPlus} from "@tabler/icons-react";
 import {openModal} from "@mantine/modals";
 import NewMeeting from "@/components/dashboard/NewMeeting/NewMeeting";
+import {addNotification} from "@/lib/utils/notificationsManager";
 dayjs.locale('pl');
 
 
@@ -24,7 +25,7 @@ export default function Meetings() {
 
     const handleOpenModal = () => {
         openModal({
-            title: 'Nowe spotkanie',
+            title: <Title order={2}>Nowe spotkanie</Title>,
             size: '70%',
             radius: 10,
             children: (
@@ -34,16 +35,24 @@ export default function Meetings() {
     };
     useEffect(() => {
         async function fetchData() {
-            const mtgs = await MeetingsGetMonth();
-            mtgs.map((mtg) => mtg.date = dayjs(adjustTimeToLocal(mtg.date,mtg.timezoneOffset)).toDate());
-            const cache = mtgs.reduce((acc, meeting) => {
-                const dateKey = dayjs(adjustTimeToLocal(meeting.date,meeting.timezoneOffset)).format('DD-MM-YYYY');
-                if (!acc[dateKey]) acc[dateKey] = [];
-                acc[dateKey].push(meeting);
-                return acc;
-            }, {} as Record<string, any[]>);
+            try{
+                const mtgs = await MeetingsGetMonth();
+                const cache = mtgs.reduce((acc, meeting) => {
+                    const dateKey = dayjs(adjustTimeToLocal(meeting.date,meeting.timezoneOffset)).format('DD-MM-YYYY');
+                    if (!acc[dateKey]) acc[dateKey] = [];
+                    acc[dateKey].push(meeting);
+                    return acc;
+                }, {} as Record<string, any[]>);
 
-            setDateInfoCache(cache);
+                setDateInfoCache(cache);
+            }
+            catch{
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Informacje o spotkaniach nie zostały pobrane.',
+                    color: 'red',
+                });
+            }
         }
         fetchData();
     }, []);
@@ -106,7 +115,7 @@ export default function Meetings() {
                                             {exampleDateInfo.map(event => (
                                                 <div key={event.id} className={classes.eventInfo}>
                                                     <Title order={2}>{event.name}</Title>
-                                                    <div>{dayjs(event.date).format('DD.MM | HH:mm')}</div>
+                                                    <div>{dayjs(event.date).format('DD.MM | HH:mm UTC')}</div>
                                                     <div>{event.place}</div>
                                                     <Button component={Link} href={"/meeting/" + event.id}>
                                                         Przejdź do wydarzenia

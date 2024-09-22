@@ -79,6 +79,15 @@ export default function Auth() {
                     {authMethod === authOptions.recover &&
                         <Recover setAuthMethod={setAuthMethod} options={authOptions}/>}
                 </Paper>
+                <Paper withBorder shadow="md" p="lg" mt="xl" radius="md"
+                    style={{ position: 'fixed', bottom: '20px', right: '20px',
+                        backgroundColor: 'var(--mantine-color-violet-7)', color: 'white', zIndex: 1000 }}>
+                    Example account credentials:
+                    <br />
+                    Login: test@example.com
+                    <br />
+                    Password: test12345
+                </Paper>
             </Container>
         </main>
     );

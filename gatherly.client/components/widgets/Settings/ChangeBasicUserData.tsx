@@ -4,6 +4,7 @@ import { closeAllModals } from "@mantine/modals";
 import UpdateUserData from "@/lib/widgets/Settings/UpdateUserData";
 import {UserInfo} from "@/lib/interfaces/types";
 import JwtTokenValid from "@/lib/auth/GetUserInfo";
+import {addNotification} from "@/lib/utils/notificationsManager";
 
 interface Errors {
     name?: string;
@@ -19,46 +20,65 @@ const ChangeBasicUserData = () => {
     const [loading, setLoading] = useState(false);
     const theme = useMantineTheme();
 
-    // Fixed number of static avatars located in /avatars
     const avatarUrls = Array.from({ length: 15 }, (_, i) => `/avatars/avatar${i + 1}.png`);
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Dodanie stanu userInfo
 
     useEffect(() => {
-        // Ustaw dane użytkownika w zmiennej
-        const fetchUserInfo = async () => {
-            const x = await JwtTokenValid();
-            if (x) {
-                setName(x.name);
-                setEmail(x.email);
-                setAvatar(x.avatarName);
-            }
-        };
-        fetchUserInfo();
+        try{
+            const fetchUserInfo = async () => {
+                const x = await JwtTokenValid();
+                if (x) {
+                    setName(x.name);
+                    setEmail(x.email);
+                    setAvatar(x.avatarName);
+                }
+            };
+            fetchUserInfo();
+        }
+        catch{
+            addNotification({
+                title: 'Wystąpił błąd',
+                message: 'Nie udało się pobrać informacji.',
+                color: 'red',
+            });
+        }
     }, []);
 
     const handleSubmit = () => {
+        setLoading(true);
         const validationErrors: Errors = {};
-
         if (!name) validationErrors.name = "Nazwa użytkownika jest wymagana";
         if (!email) validationErrors.email = "Adres email jest wymagany";
         if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/)) validationErrors.email = "Podany adres jest nieprawidłowy";
         if (!avatar) validationErrors.avatar = "Należy wybrać avatar";
-
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
+            setLoading(false);
             return;
         }
-
-        UpdateUserData({
-            name: name,
-            email: email,
-            avatarName: avatar
-        }).then(() => {
-            setTimeout(() => {
-                setLoading(false);
-                window.location.reload();
-            }, 3000);
-        });
+        try{
+            UpdateUserData({
+                name: name,
+                email: email,
+                avatarName: avatar
+            }).then(() => {
+                addNotification({
+                    title: 'Sukces',
+                    message: 'Profil użytkownika został zaktualizowany.',
+                    color: 'green',
+                });
+                setTimeout(() => {
+                    setLoading(false);
+                    window.location.reload();
+                }, 3000);
+            });
+        }
+        catch{
+            addNotification({
+                title: 'Wystąpił błąd',
+                message: 'Profil użytkownika nie został zaktualizowany.',
+                color: 'red',
+            });
+        }
     };
 
     const handleRejectChanges = () => {
@@ -74,11 +94,14 @@ const ChangeBasicUserData = () => {
                 value={name}
                 name="name"
                 placeholder="Nowe spotkanie"
-                onChange={event => setName(event.target.value)}
+                onChange={event => {setName(event.target.value)
+                    setErrors(prevErrors => ({
+                    ...prevErrors,
+                    name: undefined
+                }));
+            }}
                 error={errors.name}
             />
-            {errors.name && <Text color="red">{errors.name}</Text>}
-
             <Text size="xl" c="dimmed" fw={500}>Adres email</Text>
             <TextInput
                 variant="unstyled"
@@ -86,10 +109,14 @@ const ChangeBasicUserData = () => {
                 value={email}
                 name="email"
                 placeholder="Opis spotkania"
-                onChange={event => setEmail(event.target.value)}
+                onChange={event => {setEmail(event.target.value)
+                    setErrors(prevErrors => ({
+                        ...prevErrors,
+                        email: undefined
+                    }));
+                }}
                 error={errors.email}
             />
-            {errors.email && <Text color="red">{errors.email}</Text>}
             <Paper>
                 <Text size="xl" c="dimmed" fw={500}>Wybierz avatar</Text>
                 <Space h="sm"/>

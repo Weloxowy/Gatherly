@@ -3,14 +3,24 @@
 import React, {useEffect, useState} from "react";
 import classes from "./CalendarCardWidget.module.css";
 import CalendarCardGet from "@/lib/widgets/CalendarCard/CalendarCardGet";
+import {addNotification} from "@/lib/utils/notificationsManager";
 
 const CalendarCardWidget : React.FC = () => {
     const [numberOfMeetings, setNumberOfMeetings] = useState(0);
 
     useEffect(() => {
         (async () => {
-            const meetingsCount = await CalendarCardGet();
-            setNumberOfMeetings(meetingsCount);
+            try{
+                const meetingsCount = await CalendarCardGet();
+                setNumberOfMeetings(meetingsCount);
+            }
+            catch{
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Dane nie zostały pobrane',
+                    color: 'red',
+                });
+            }
         })();
     }, []);
 

@@ -25,10 +25,6 @@ const nextConfig = {
     eslint: {
         ignoreDuringBuilds: true, // Wyłącza ESLint podczas budowania
     },
-/*
-    output: 'export', // Dodaje eksport jako statyczną stronę
-    distDir: 'out',   // Określenie katalogu dla zbudowanych plików
-*/
 };
 
 

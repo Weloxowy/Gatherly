@@ -12,6 +12,7 @@ import { openModal } from "@mantine/modals";
 import NewMeeting from "@/components/dashboard/NewMeeting/NewMeeting";
 import { IconCalendarPlus } from "@tabler/icons-react";
 import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
+import {addNotification} from "@/lib/utils/notificationsManager";
 
 const NextMeetingWidget: React.FC = () => {
     const [meeting, setMeeting] = useState<Meeting | null>(null); // Zmieniony typ na Meeting | null
@@ -22,7 +23,7 @@ const NextMeetingWidget: React.FC = () => {
 
     const handleOpenModal = () => {
         openModal({
-            title: 'Nowe spotkanie',
+            title: <Title order={2}>Nowe spotkanie</Title>,
             size: '70%',
             radius: 10,
             children: (
@@ -33,12 +34,21 @@ const NextMeetingWidget: React.FC = () => {
 
     useEffect(() => {
         (async () => {
-            const get = await NextMeeting();
-            if (get) {
-                setMeeting(get);
-                setMeetingId(get.meetingId); // Poprawne przypisanie ID
+            try{
+                const get = await NextMeeting();
+                if (get) {
+                    setMeeting(get);
+                    setMeetingId(get.meetingId); // Poprawne przypisanie ID
+                }
+                setIsLoading(false);
             }
-            setIsLoading(false);
+            catch{
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Informacje nie zostały pobrane.',
+                    color: 'red',
+                });
+            }
         })();
     }, []);
 

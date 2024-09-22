@@ -25,6 +25,7 @@
     text-align: center;
     color: gray;
     word-wrap: break-word;
+    margin: 10px 0; /* Margines tylko od góry i dołu */
 }
 .inputPanel {
     margin-top: auto; /* Przyklejone do dołu */

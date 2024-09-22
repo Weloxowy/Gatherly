@@ -1,18 +1,18 @@
 ﻿import React, { useState, useEffect } from "react";
 import {
+    ActionIcon,
     Button,
     Container,
     Group,
-    MantineThemeProvider,
     rem,
     Title,
     useMantineColorScheme,
-    useMantineTheme
 } from "@mantine/core";
 import Link from "next/link";
 import { cabinet } from "@/app/fonts";
 import classes from './HomeNav.module.css';
 import clsx from "clsx";
+import { IconMoonStars, IconSun } from "@tabler/icons-react";
 
 const links = [
     { link: '#home', label: 'Home' },
@@ -22,25 +22,57 @@ const links = [
 
 const HomeNav: React.FC = () => {
     const [active, setActive] = useState(links[0].link);
+    const { colorScheme, setColorScheme } = useMantineColorScheme();
+    const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
     const [isDarkText, setIsDarkText] = useState(false);
+
+    // Funkcja zmiany motywu
+    const changeMode = () => {
+        setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
+        setDarkMode(!darkMode);
+        handleScroll();
+    };
+
+    // Funkcja obsługi zmiany szerokości okna
+    const handleResize = () => {
+        const windowWidth = window.innerWidth;
+        if (windowWidth < 500) {
+            // Motyw ciemny poniżej 500px
+            setColorScheme('dark');
+            setDarkMode(true);
+        } else {
+            // Motyw jasny powyżej 500px
+            setColorScheme('light');
+            setDarkMode(false);
+        }
+    };
+
+    useEffect(() => {
+        // Wywołaj handleResize od razu, aby ustawić motyw przy pierwszym renderze
+        handleResize();
+
+        // Nasłuchiwanie na zmiany rozmiaru okna
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []); // Pusty array [] zapewnia, że useEffect uruchomi się raz przy pierwszym renderze
+
     const handleScroll = () => {
         const sectionThreshold = 500;
         const scrollPosition = window.scrollY;
-        const colorScheme = useMantineColorScheme.toString(); // Get the current color scheme from Mantine
-        const isDarkMode = colorScheme === 'dark';
 
         // Zmieniaj kolor tekstu, gdy przekroczono próg
-        if (isDarkMode) {
-            // Dla ciemnego motywu
+        if (darkMode) {
             if (scrollPosition > sectionThreshold) {
-                setIsDarkText(false); // Tekst będzie jasny przy scrollu
+                setIsDarkText(false); // Tekst jasny przy scrollu
             } else {
-                setIsDarkText(true); // Tekst ciemny na początku
+                setIsDarkText(false); // Tekst ciemny na początku
             }
         } else {
-            // Dla jasnego motywu
             if (scrollPosition > sectionThreshold) {
-                setIsDarkText(true); // Tekst będzie ciemny przy scrollu
+                setIsDarkText(true); // Tekst ciemny przy scrollu
             } else {
                 setIsDarkText(false); // Tekst jasny na początku
             }
@@ -65,7 +97,7 @@ const HomeNav: React.FC = () => {
     useEffect(() => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    }, [darkMode]);
 
     const items = links.map((link) => (
         <Link
@@ -92,6 +124,13 @@ const HomeNav: React.FC = () => {
                 <Button color={ isDarkText ? classes.darkText : classes.lightText} component={Link} href={"/auth"} variant="outline" size={"sm"}>
                     Dołącz
                 </Button>
+                <ActionIcon onClick={changeMode} variant={"outline"} color={ isDarkText ? classes.darkText : classes.lightText} aria-label="Change theme">
+                    {darkMode ? (
+                        <IconMoonStars style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    ) : (
+                        <IconSun style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    )}
+                </ActionIcon>
             </Container>
         </header>
     );

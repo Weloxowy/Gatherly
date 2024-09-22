@@ -10,6 +10,7 @@ import {ModalsProvider} from "@mantine/modals";
 import {SpeedInsights} from "@vercel/speed-insights/next"
 import {Notifications} from "@mantine/notifications";
 import {NotificationsProvider} from "@/components/notifications/NotificationContext";
+import { Analytics } from "@vercel/analytics/react"
 
 export const metadata = {
     title: 'Gatherly', description: 'Planowanie spotkania nigdy nie było prostsze!'
@@ -20,9 +21,9 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
         <head>
             <ColorSchemeScript/><title></title>
             <SpeedInsights/>
+            <Analytics/>
         </head>
         <body>
-
         <MantineProvider defaultColorScheme={"auto"} theme={theme}>
             <ModalsProvider>
                 <NotificationsProvider>
@@ -30,9 +31,7 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
                     {children}
                 </NotificationsProvider>
             </ModalsProvider>
-
         </MantineProvider>
-
         </body>
         </html>
 

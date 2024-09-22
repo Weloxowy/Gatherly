@@ -1,7 +1,7 @@
 ﻿"use client"
 import React, {useEffect, useState} from "react";
 import classes from "@/components/widgets/Notes/NotesWidget.module.css";
-import {Button, Checkbox, Group, ScrollArea, Table, Text, Transition} from "@mantine/core";
+import {ScrollArea, Table, Text} from "@mantine/core";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import MeetingsGet from "@/lib/widgets/Meetings/MeetingsGet";
@@ -12,7 +12,7 @@ import {useRouter} from "next/navigation";
 
 const MeetingsWidget : React.FC = () => {
     const [scrolled, setScrolled] = useState(false);
-    const [meetings, setMeetings] = useState<Meeting[]>([]); // Ustawienie typu i początkowej wartości
+    const [meetings, setMeetings] = useState<Meeting[]>([]);
 
     useEffect(() => {
         (async () => {
@@ -57,7 +57,6 @@ const MeetingsWidget : React.FC = () => {
                         :
                         (<div style={{alignItems: "center", alignContent: "center"}}>
                                 <Text>Coś tu pusto</Text>
-
                             </div>
                         )
                 }

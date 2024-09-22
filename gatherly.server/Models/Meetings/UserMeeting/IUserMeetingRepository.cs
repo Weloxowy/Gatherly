@@ -12,7 +12,8 @@ public interface IUserMeetingRepository
     public Task<List<UserEntityDTOMeetingInfo>> GetAllRejectedInvites(Guid meetingId); //zbiór wszystkich tych co odrzucili przybycie
     
     public Task<UserMeeting> CreateNewUserMeetingEntity(UserMeetingDTOCreate userMeetingDtoCreate); //stworzenie nowej encji - jak ktoś zaakceptuje zaproszenie
-    public Task<bool> DeleteUserMeetingEntity(Guid userMeetingId); //usunięcie encji - jak ktoś opuści spotkanie
+    public Task<bool> DeleteUserMeetingEntity(Guid userMeetingId); //usunięcie encji - jak ktoś opuści spotkanie lub z niego wyjdzie
+    public Task<bool> DeleteUserMeetingEntity(Guid userId, Guid meetingId); //usunięcie encji - jak ktoś opuści spotkanie lub z niego wyjdzie
     public Task<Guid?> GetUserMeetingId(Guid userId, Guid meetingId); //wyszukanie userMeetingId po id usera i meetingu
     public Task<InvitationStatus?> GetUserMeetingStatus(Guid userId, Guid meetingId); //wyszukanie statusu usermeeting
     public Task<UserMeeting> ChangeInvitationStatus(Guid userMeetingId, InvitationStatus status); //zmiana statusu przybycia
@@ -23,6 +24,6 @@ public interface IUserMeetingRepository
     public Task<List<MeetingDTOInfo>> GetAllMeetingsByUserId(Guid userId); //lista spotkan danego uzytkownika ktore sie nie odbyly
     public Task<UserMeeting> GetInviteByIds(Guid meetingId, Guid userId); //znajdz encje usermeeting po id spotkania i usera
     public Task<bool> IsUserInMeeting(Guid userId, Guid meetingId);
-
-
+    public Task<string?> GetUserTimes(Guid userId, Guid meetingId);
+    public Task<List<AvailabilityTimesDTO>> GetAllUserTimes(Guid meetingId, Guid ownerId);
 }

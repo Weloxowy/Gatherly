@@ -76,13 +76,13 @@ public class InvitationsController : ControllerBase
             {
                 return Unauthorized("You are not authorized to create this invitation.");
             }
-
+            
             var userInfo = _userEntityService.GetUserInfo(invitation.UserEmail);
             if (userInfo == null)
             {
                 return NotFound("User not found.");
             }
-
+            
             var isUserInvitedAlready = await _invitationsService.IsInvitationExist(userInfo.Id, invitation.MeetingId);
             if (isUserInvitedAlready)
             {

@@ -77,3 +77,5 @@ gatherly.client/.scannerwork
 /gatherly.server/Content/reminders/
 /docker-compose.yml
 /gatherly.client/.env
+/gatherly.server/appsettings.Development.json
+/gatherly.server/appsettings.json

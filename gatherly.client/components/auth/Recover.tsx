@@ -5,6 +5,7 @@ import sendRecoveryRequest from "@/lib/auth/sendRecoveryRequest";
 import {useForm} from "@mantine/form";
 
 const Recover: React.FC<AuthProps> = ({setAuthMethod, options}) => {
+    const [loading, setLoading] = useState(false);
     const [responseMessage, setResponseMessage] = useState(''); // Dodany stan do przechowywania odpowiedzi
     const form = useForm({
         initialValues: {
@@ -15,6 +16,7 @@ const Recover: React.FC<AuthProps> = ({setAuthMethod, options}) => {
     });
 
     const handleSubmitForm = async (values: { email: string }) => {
+        setLoading(true);
         try {
             const res = await sendRecoveryRequest(values.email);
 
@@ -38,6 +40,9 @@ const Recover: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                     break;
             }
         }
+        finally {
+            setLoading(false);
+        }
     };
 
     return (<>
@@ -59,7 +64,7 @@ const Recover: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                             Rejestracja
                         </Anchor>
                     </Group>
-                    <Button fullWidth mt="lg" type="submit">
+                    <Button loading={loading} fullWidth mt="lg" type="submit">
                         Resetuj hasło
                     </Button>
                 </form>)}

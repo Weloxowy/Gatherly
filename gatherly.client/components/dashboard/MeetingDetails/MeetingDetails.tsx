@@ -3,11 +3,17 @@ import React, {useEffect, useState} from "react";
 import {Avatar, AvatarGroup, Button, Fieldset, Flex, ScrollArea, Space, Text, Title, Tooltip} from "@mantine/core";
 import dayjs from "dayjs";
 import {ExtendedMeeting} from "@/lib/interfaces/types";
-import EditMeeting from "@/components/dashboard/EditMeeting/EditMeeting";
-import {closeAllModals, modals, openModal} from "@mantine/modals";
+import EditMeeting from "@/components/dashboard/MeetingModals/EditMeeting";
+import {openModal} from "@mantine/modals";
 import SetMeetingTimeByUser from "@/components/dashboard/SetMeetingTimeByUser/SetMeetingTimeByUser";
 import adjustTimeToLocal from "@/lib/widgets/Meetings/adjustTimeToLocal";
 import axiosInstance from "@/lib/utils/AxiosInstance";
+import EditStatus from "@/components/dashboard/MeetingModals/EditStatus";
+import EditPlanningMode from "@/components/dashboard/MeetingModals/EditPlanningMode";
+import DeleteMeeting from "@/components/dashboard/MeetingModals/DeleteMeeting";
+import LeaveMeeting from "@/components/dashboard/MeetingModals/LeaveMeeting";
+import {addNotification} from "@/lib/utils/notificationsManager";
+import SetMeetingTimeByAdmin from "@/components/dashboard/SetMeetingTimeByAdmin/SetMeetingTimeByAdmin";
 
 interface MeetingDetailsProps {
     data: ExtendedMeeting;
@@ -15,7 +21,6 @@ interface MeetingDetailsProps {
 
 const MeetingDetails: React.FC<MeetingDetailsProps> = ({data}) => {
     const [userMeetingStatus, setUserMeetingStatus] = useState<number>(0);
-
     useEffect(() => {
         const fetchMeetingStatus = async () => {
             try {
@@ -23,7 +28,12 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({data}) => {
                 console.log(response);
                 setUserMeetingStatus(response.data);
             } catch (error) {
-                console.error('Error fetching meeting status:', error);
+                //console.error('Error fetching meeting status:', error);
+                addNotification({
+                    title: 'Wystąpił błąd',
+                    message: 'Informacje o spotkaniu nie zostały pobrane pomyślnie.',
+                    color: 'red',
+                });
                 setUserMeetingStatus(-1);
             }
         };
@@ -39,49 +49,64 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({data}) => {
         });
     };
 
-    const handleStatusModal = (status: number) => modals.openConfirmModal({
-        title: <Title order={2}>Zmiana statusu przybycia</Title>, size: '70%', radius: 10, children: (<Text size="sm">
-            Potwierdzenie spowoduje zmianę twojego statusu przybycia.
-        </Text>), labels: {confirm: 'Potwierdź', cancel: 'Anuluj'}, onCancel: () => closeAllModals(),//popraw
-        onConfirm: () => {
-            axiosInstance.get('/Meetings/meeting/setStatus?meetingId=' + data.id + '&invitationStatus=' + status);
-            setUserMeetingStatus(status);
-            closeAllModals();
-        },
-    });
-
-    const handlePlanningModeModal = () => modals.openConfirmModal({
-        title: <Title order={2}>Zmiana trybu spotkania</Title>, size: '70%', radius: 10, children: (<Text size="sm">
-            Zmiana spowoduje tymczasowe wyłączenie trybu planowania spotkania.
-            Aby ponownie go włączyć, ponownie dokonaj zmiany trybu.
-        </Text>), labels: {confirm: 'Potwierdź', cancel: 'Anuluj'}, onCancel: () => closeAllModals(),//popraw
-        onConfirm: () => {
-            axiosInstance.post('/Meetings/changeMode/' + data.id);
-            closeAllModals();
-        },
-    });
-
-    const handleTimeModal = () => {
+    const handleStatusModal = (status: number) => {
         openModal({
-            title: 'Modyfikacja czasu spotkania',
+            title: <Title order={2}>Zmiana statusu</Title>,
             size: '70%',
             radius: 10,
-            children: (data.isRequestingUserAnOwner ?
-                (<SetMeetingTimeByUser startDateTime={data.startOfTheMeeting} endDateTime={data.endOfTheMeeting} intervalsPerHour={1}/>):
-                    ('tu by admin')
-            ),
+            children: (<EditStatus data={data} status={status} onSubmit={() => {
+                setUserMeetingStatus(status)
+                window.location.reload();
+            }}/>),
         });
     };
 
-    const handleDeleteMeetingModal = () => modals.openConfirmModal({
-        title: <Title order={2}>Usunięcie spotkania</Title>, size: '70%', radius: 10, children: (<Text size="sm">
-            Aby usunąć kliknij przycisk potwierdź. Operacja jest nieodwracalna.
-        </Text>), labels: {confirm: 'Potwierdź', cancel: 'Anuluj'}, onCancel: () => closeAllModals(), onConfirm: () => {
-            axiosInstance.delete('/Meetings/' + data.id).then(r => r.status);
-            closeAllModals();
-            window.location.href = "/meetings"
-        },
-    });
+    const handlePlanningModeModal = () => {
+        openModal({
+            title: <Title order={2}>Zmiana statusu</Title>,
+            size: '70%',
+            radius: 10,
+            children: (<EditPlanningMode id={data.id} onSubmit={() => {
+                window.location.reload();
+            }}/>),
+        });
+    };
+
+    const handleTimeModal = () => {
+        openModal({
+            title: <Title order={2}>Modyfikacja czasu spotkania</Title>,
+            size: '70%',
+            radius: 10,
+            children: (data.isRequestingUserAnOwner ? (
+                <SetMeetingTimeByAdmin startDateTime={data.startOfTheMeeting} endDateTime={data.endOfTheMeeting}
+                                       intervalsPerHour={1}/>) : (
+                <SetMeetingTimeByUser startDateTime={data.startOfTheMeeting} endDateTime={data.endOfTheMeeting}
+                                      intervalsPerHour={1}/>)),
+        });
+    };
+
+    const handleDeleteMeetingModal = () => {
+        openModal({
+            title: <Title order={2}>Usunięcie spotkania</Title>,
+            size: '70%',
+            radius: 10,
+            children: (<DeleteMeeting id={data.id} onSubmit={() => {
+                window.location.href = "/meetings"
+            }}/>),
+        });
+    };
+
+    const handleLeaveMeetingModal = () => {
+        openModal({
+            title: <Title order={2}>Wyjście ze spotkania</Title>,
+            size: '70%',
+            radius: 10,
+            children: (<LeaveMeeting id={data.id} onSubmit={() => {
+                window.location.href = "/meetings"
+            }}/>),
+        });
+    };
+
 
     return (<ScrollArea offsetScrollbars style={{flex: 1, overflow: 'auto'}}>
         <div>
@@ -197,22 +222,27 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({data}) => {
                 </Flex>
             </>) : (<></>)}
             <Space h={"md"}/>
-            {userMeetingStatus ? (
-                <Fieldset legend="Zmień status swojej obecności" radius="md" style={{display: "flex", gap: "10px",justifyContent: "space-between", flexWrap: "wrap"}}>
-                    <Button disabled={userMeetingStatus===1} onClick={() => handleStatusModal(1)}>Będę!</Button>
-                    <Button disabled={userMeetingStatus===2} onClick={() => handleStatusModal(2)}>Może się zjawię</Button>
-                    <Button disabled={userMeetingStatus===3} onClick={() => handleStatusModal(3)}>Nie przyjdę</Button>
-                </Fieldset>
-            ) : ('')}
+            {userMeetingStatus ? (<Fieldset legend="Zmień status swojej obecności" radius="md" style={{
+                display: "flex", gap: "10px", justifyContent: "space-between", flexWrap: "wrap"
+            }}>
+                <Button disabled={userMeetingStatus === 1} onClick={() => handleStatusModal(1)}>Będę!</Button>
+                <Button disabled={userMeetingStatus === 2} onClick={() => handleStatusModal(2)}>Może się
+                    zjawię</Button>
+                <Button disabled={userMeetingStatus === 3} onClick={() => handleStatusModal(3)}>Nie przyjdę</Button>
+            </Fieldset>) : ('')}
 
 
-            {data.isRequestingUserAnOwner ? (<Fieldset legend="Ustawienia spotkania" radius="md" style={{display: "flex", gap: "10px",justifyContent: "space-between", flexWrap: "wrap"}}>
+            {data.isRequestingUserAnOwner ? (<Fieldset legend="Ustawienia spotkania" radius="md" style={{
+                display: "flex", gap: "10px", justifyContent: "space-between", flexWrap: "wrap"
+            }}>
                 <Button onClick={handlePlanningModeModal}>
                     {data.isMeetingTimePlanned ? "Wyłącz tryb ustalania godziny" : "Włącz tryb ustalania godziny"}
                 </Button>
                 <Button onClick={handleOpenModal}>Zmodyfikuj szczegóły spotkania</Button>
                 <Button color="red" onClick={handleDeleteMeetingModal}>Usuń spotkanie</Button>
-            </Fieldset>) : (<></>)}
+            </Fieldset>) : (
+                <div style={{display: "flex", flexGrow: 1, alignContent: "center", justifyContent: "stretch"}}>
+                    <Button color="red" onClick={handleLeaveMeetingModal}>Wyjdź ze spotkania</Button></div>)}
         </div>
     </ScrollArea>);
 };

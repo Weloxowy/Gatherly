@@ -1,20 +1,21 @@
-﻿import React from "react";
-import {Anchor, Button, FocusTrap, Group, PasswordInput, TextInput} from "@mantine/core";
+﻿import React, {useState} from "react";
+import {Anchor, Button, Group, PasswordInput, TextInput} from "@mantine/core";
 import {useForm} from "@mantine/form";
 import loginValid from "@/lib/auth/LoginValid";
 import {AuthProps} from "@/lib/interfaces/types";
-import Link from "next/link";
 
 const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
+    const [loading, setLoading] = useState(false);
     const form = useForm({
         initialValues: {
             email: '', password: '',
-        }, validate: {//  ^\S+@\S+\.+\S{2}
+        }, validate: {
             email: (value) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) ? null : 'Nieprawidłowy adres email'),
         },
     });
 
     const handleSubmitForm = async (values: { email: string, password: string }) => {
+        setLoading(true);
         try {
             await loginValid(values.email, values.password);
             window.location.href = "/home";
@@ -35,6 +36,9 @@ const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                     break;
             }
         }
+        finally {
+            setLoading(false);
+        }
     };
 
     return (<>
@@ -52,7 +56,7 @@ const LoginTraditional: React.FC<AuthProps> = ({setAuthMethod, options}) => {
                     </Anchor>
                 </Group>
 
-                <Button fullWidth mt="lg" type="submit">
+                <Button loading={loading} fullWidth mt="lg" type="submit">
                     Zaloguj
                 </Button>
             </form>
