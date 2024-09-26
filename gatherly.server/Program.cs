@@ -24,6 +24,7 @@ using gatherly.server.Persistence.Mailing.EmailTemplates;
 using gatherly.server.Persistence.Meetings.Invitations;
 using gatherly.server.Persistence.Meetings.Meeting;
 using gatherly.server.Persistence.Meetings.UserMeeting;
+using gatherly.server.Persistence.Tokens;
 using gatherly.server.Persistence.Tokens.BlacklistToken;
 using gatherly.server.Persistence.Tokens.RefreshToken;
 using gatherly.server.Persistence.Tokens.TokenEntity;
@@ -32,22 +33,41 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
+using NHibernate;
+using ISession = NHibernate.ISession;
 
 Env.Load(".env");
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddSingleton(NHibernateHelper.SessionFactory);
-builder.Services.AddScoped<IUserEntityService, UserEntityService>();
+// Add NHibernate
+builder.Services.AddSingleton<ISessionFactory>(provider =>
+{
+    return NHibernateHelper.SessionFactory;
+});
+
+builder.Services.AddScoped(provider =>
+{
+    var sessionFactory = provider.GetService<ISessionFactory>();
+    return sessionFactory.OpenSession();
+});
+
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<TokenHelper>();
+builder.Services.AddScoped<ISsoSessionRepository, SsoSessionRepository>();
+builder.Services.AddScoped<IRecoverySessionRepository, RecoverySessionRepository>();
+builder.Services.AddScoped<IUserEntityRepository, UserEntityRepository>();
+
 builder.Services.AddScoped<ISsoSessionService, SsoSessionService>();
+builder.Services.AddScoped<IRecoverySessionService, RecoverySessionService>();
+builder.Services.AddScoped<IUserEntityService, UserEntityService>();
+
 builder.Services.AddScoped<ITokenEntityService, TokenEntityService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IBlacklistTokenService, BlacklistTokenService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IMailEntityService, MailEntityService>();
 builder.Services.AddScoped<IMailEntityRepository, MailEntityRepository>();
-builder.Services.AddScoped<IRecoverySessionService, RecoverySessionService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IUserMeetingService, UserMeetingService>();
 builder.Services.AddScoped<IInvitationsService, InvitationsService>();
@@ -59,15 +79,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR(options =>
 {
-    options.KeepAliveInterval = TimeSpan.FromMinutes(4); // Zwiêksz czas miêdzy pingami
+    options.KeepAliveInterval = TimeSpan.FromMinutes(4);
 });
 
 // Konfiguracja Swaggera
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gatherly API", Version = "v1.1" });
-    //c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,
-    //    $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,
+     $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 
     // Konfiguracja JWT
     var securityScheme = new OpenApiSecurityScheme

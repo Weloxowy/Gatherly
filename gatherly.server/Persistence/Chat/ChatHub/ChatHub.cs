@@ -46,7 +46,7 @@ namespace gatherly.server.Persistence.Chat
         public async Task SendMessage(string content)
         {
             var userId = _tokenEntityService.GetIdFromRequestCookie(Context.GetHttpContext());
-            var user = _userEntityService.GetUserInfo(Guid.Parse(userId));
+            var user = await _userEntityService.GetUserInfo(Guid.Parse(userId));
             if (userId == null)
             {
                 throw new UnauthorizedAccessException("User is not authenticated.");

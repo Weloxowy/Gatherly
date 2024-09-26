@@ -2,6 +2,7 @@
 using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Tokens.RefreshToken;
 using gatherly.server.Models.Tokens.TokenEntity;
+using gatherly.server.Persistence.Tokens;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,9 +15,9 @@ namespace gatherly.server.Controllers.Authentication;
 [ApiController]
 public class UserController : ControllerBase
 {
-    private readonly IRefreshTokenService _refreshTokenService;
     private readonly ITokenEntityService _tokenEntityService;
     private readonly IUserEntityService _userService;
+    private readonly TokenHelper _tokenHelper;
 
     /// <summary>
     ///     Constructor for UserController.
@@ -25,11 +26,11 @@ public class UserController : ControllerBase
     /// <param name="tokenEntityService">Service for token-related operations.</param>
     /// <param name="refreshTokenService">Service for refresh token operations.</param>
     public UserController(IUserEntityService userService, ITokenEntityService tokenEntityService,
-        IRefreshTokenService refreshTokenService)
+        TokenHelper tokenHelper)
     {
         _userService = userService;
         _tokenEntityService = tokenEntityService;
-        _refreshTokenService = refreshTokenService;
+        _tokenHelper = tokenHelper;
     }
     
     //operations for logged-in user (not Admin)
@@ -53,10 +54,8 @@ public class UserController : ControllerBase
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have no access to this resource");
 
-        var user = _userService.GetUserInfo(mail);
-        if (user == null)
-            return StatusCode(500, "There was a problem while accessing the record. Please try again later");
-        return Ok(user.ToDto());
+        var user = await _userService.GetUserInfo(mail);
+        return user == null ? StatusCode(500, "There was a problem while accessing the record. Please try again later") : Ok(user.ToDto());
     }
 
     /// <summary>
@@ -77,31 +76,13 @@ public class UserController : ControllerBase
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have no access to this resource");
 
-        var user = _userService.PatchUserInfo(newData, mail);
+        var user = await _userService.PatchUserInfo(newData, mail);
         if (user == null)
             return StatusCode(500, "There was a problem while modifying the data. Please try again later");
 
-        var refresh = _refreshTokenService.GenerateRefreshToken(user.Id);
-        var jwt = _tokenEntityService.GenerateToken(user, refresh.Id.ToString());
-
-        var jwtCookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddMinutes(15)
-        };
-
-        var refreshCookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddHours(1)
-        };
-
-        Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
-        Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
+        var tokens = _tokenHelper.GenerateTokens(user);
+        CookieHelper.SetJwtCookie(Response, tokens.JwtToken);
+        CookieHelper.SetRefreshTokenCookie(Response, tokens.RefreshToken);
 
         return Ok(user.ToDto());
     }
@@ -119,19 +100,17 @@ public class UserController : ControllerBase
     /// <response code="500">Error occurred while deleting the user profile.</response>
     [Authorize]
     [HttpDelete("profile")]
-    public ActionResult<UserEntity> DeleteUser()
+    public async Task<ActionResult<UserEntity>> DeleteUser()
     {
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have no access to this resource");
 
-        var result = _userService.DeleteUserInfo(mail);
+        var result = await _userService.DeleteUserInfo(mail);
 
-        if (!result) return StatusCode(500, "There was a problem while deleting the user. Please try again later");
-
-        return Ok("User deleted");
+        return !result ? StatusCode(500, "There was a problem while deleting the user. Please try again later") : Ok("User deleted");
     }
-
-    //operations for admin
+/*
+    //operations for admin - not in use
 
     /// <summary>
     ///     Retrieves the profile information of a user by their ID.
@@ -147,15 +126,15 @@ public class UserController : ControllerBase
     /// <response code="500">Error occurred while accessing the user profile.</response>
     [Authorize]
     [HttpGet("profile/{id}")]
-    public ActionResult<UserEntity> GetUserById(Guid id)
+    public async Task<ActionResult<UserEntity>> GetUserById(Guid id)
     {
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have an invalid access token");
 
-        var isAdmin = _userService.IsUserAdmin(mail);
+        var isAdmin = await _userService.IsUserAdmin(mail);
         if (isAdmin != true) return Unauthorized("You have no access to this resource");
 
-        var user = _userService.GetUserInfo(id);
+        var user = await _userService.GetUserInfo(id);
         if (user == null)
             return StatusCode(500, "There was a problem while accessing the data. Please try again later");
         return Ok(user.ToDto());
@@ -177,18 +156,18 @@ public class UserController : ControllerBase
     /// <response code="500">Error occurred while updating the user profile.</response>
     [Authorize]
     [HttpPatch("profile/{id}")]
-    public ActionResult<UserEntity> PatchUserById([FromBody] UserEntityDTOUpdate newData, Guid id)
+    public async Task<ActionResult<UserEntity>> PatchUserById([FromBody] UserEntityDTOUpdate newData, Guid id)
     {
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have an invalid token");
 
-        var isAdmin = _userService.IsUserAdmin(mail);
+        var isAdmin = await _userService.IsUserAdmin(mail);
         if (isAdmin != true) return Unauthorized("You have no access to this resource");
 
-        var userEmail = _userService.GetUserInfo(id);
+        var userEmail = await _userService.GetUserInfo(id);
         if (userEmail == null) return NotFound("User profile not found");
 
-        var user = _userService.PatchUserInfo(newData, userEmail.Email);
+        var user = await _userService.PatchUserInfo(newData, userEmail.Email);
         if (user == null) return StatusCode(500, "There was a problem while updating the data. Please try again later");
 
         return Ok(user.ToDto());
@@ -209,21 +188,21 @@ public class UserController : ControllerBase
     /// <response code="500">Error occurred while deleting the user profile.</response>
     [Authorize]
     [HttpDelete("profile/{id}")]
-    public ActionResult<UserEntity> DeleteExistingUser(string id)
+    public async Task<ActionResult<UserEntity>> DeleteExistingUser(string id)
     {
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
         if (mail == null) return Unauthorized("You have an invalid token");
 
-        var isAdmin = _userService.IsUserAdmin(mail);
+        var isAdmin = await _userService.IsUserAdmin(mail);
         if (isAdmin != true) return Unauthorized("You have no access to this resource");
 
-        var userEmail = _userService.GetUserInfo(id);
+        var userEmail = await _userService.GetUserInfo(id);
         if (userEmail == null) return NotFound("User profile not found");
 
-        var result = _userService.DeleteUserInfo(userEmail.Email);
+        var result = await _userService.DeleteUserInfo(userEmail.Email);
         if (!result)
             return StatusCode(500, "There was a problem while deleting the user. Please try again later");
         return Ok("User deleted");
     }
-    
+*/   
 }

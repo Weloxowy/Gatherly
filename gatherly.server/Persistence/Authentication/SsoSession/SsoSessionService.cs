@@ -1,44 +1,65 @@
-﻿using gatherly.server.Models.Authentication.SsoSession;
+﻿using System.Security.Cryptography;
+using gatherly.server.Models.Authentication.SsoSession;
 
 namespace gatherly.server.Persistence.Authentication.SsoSession;
 
+/// <summary>
+///     Service layer for managing SSO (Single Sign-On) sessions.
+/// </summary>
 public class SsoSessionService : ISsoSessionService
 {
-    private readonly SsoSessionRepository _ssoSessionRepository = new(NHibernateHelper.SessionFactory);
+    private readonly ISsoSessionRepository _ssoSessionRepository;
 
-
-    public Models.Authentication.SsoSession.SsoSession CreateSso(Guid userId, string email)
+    public SsoSessionService(ISsoSessionRepository ssoSessionRepository)
     {
-        return _ssoSessionRepository.CreateSso(userId, email);
+        _ssoSessionRepository = ssoSessionRepository;
     }
 
-    public Models.Authentication.SsoSession.SsoSession CreateSso(string email)
-    {
-        return _ssoSessionRepository.CreateSso(email);
-    }
+    /// <summary>
+        /// Function creates new SsoSession.
+        /// </summary>
+        /// <param name="userId">ID of an existing user</param>
+        /// <param name="email">Email address of an existing user</param>
+        /// <returns></returns>
+        public async Task<Models.Authentication.SsoSession.SsoSession> CreateSsoSessionAsync(Guid userId, string email)
+        {
+            var existingSession = await _ssoSessionRepository.GetSso(userId);
+            if (existingSession != null)
+            {
+                return existingSession;
+            }
+            var ssoSession = new Models.Authentication.SsoSession.SsoSession
+            {
+                UserId = userId,
+                UserEmail = email,
+                VerificationCode = GenerateVerificationCode(),
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10)
+            };
+            await _ssoSessionRepository.CreateSso(ssoSession);
+            return ssoSession;
+        }
 
-    public bool ValidSso(Guid userId, string code)
-    {
-        return _ssoSessionRepository.ValidSso(userId, code);
-    }
+        /// <summary>
+        /// Function validates existing SsoSession.
+        /// </summary>
+        /// <param name="userId">ID of an existing user</param>
+        /// <param name="code">Code to validate</param>
+        /// <returns></returns>
+        public async Task<bool> ValidateSsoSessionAsync(Guid userId, string code)
+        {
+            var validSession = await _ssoSessionRepository.GetSso(userId);
+            if (validSession == null || validSession.VerificationCode != code || validSession.ExpiresAt <= DateTime.UtcNow)
+            {
+                return false;
+            }
+            await _ssoSessionRepository.DeleteSso(validSession.Id);
+            return true;
+        }
 
-    public bool ValidSso(string email, string code)
-    {
-        return _ssoSessionRepository.ValidSso(email, code);
-    }
-
-    public bool IsTokenAlive(Guid sessionId)
-    {
-        return _ssoSessionRepository.IsTokenAlive(sessionId);
-    }
-
-    public Models.Authentication.SsoSession.SsoSession SsoDetails(string sessionId)
-    {
-        return _ssoSessionRepository.SsoDetails(sessionId);
-    }
-
-    public void ExpireSso(Guid sessionId)
-    {
-        _ssoSessionRepository.ExpireSso(sessionId);
-    }
+        private static string GenerateVerificationCode()
+        {
+            return new Random().Next(100000, 999999).ToString();
+        }
+        
 }

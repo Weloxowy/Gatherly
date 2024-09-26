@@ -1,93 +1,79 @@
 ﻿using gatherly.server.Models.Authentication.RecoverySession;
 using NHibernate;
+using NHibernate.Linq;
+using ISession = NHibernate.ISession;
 
 namespace gatherly.server.Persistence.Authentication.RecoverySession;
 
 public class RecoverySessionRepository : IRecoverySessionRepository
 {
-    private readonly ISessionFactory _sessionFactory;
+    private readonly ISession _session;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public RecoverySessionRepository(ISessionFactory sessionFactory)
+    public RecoverySessionRepository(ISession session, IUnitOfWork unitOfWork)
     {
-        _sessionFactory = sessionFactory;
+        _session = session;
+        _unitOfWork = unitOfWork;
     }
-
-
-    public Models.Authentication.RecoverySession.RecoverySession CreateSession(Guid userId, string email)
+    
+    public async Task CreateSession(Models.Authentication.RecoverySession.RecoverySession recoverySession)
     {
-        using (var session = _sessionFactory.OpenSession())
+        _unitOfWork.BeginTransaction();
+        try
         {
-                var existingSession = session.Query<Models.Authentication.RecoverySession.RecoverySession>()
-                    .FirstOrDefault(x => x.UserId.Equals(userId));
-                
-                if (existingSession != null)
-                {
-                    return existingSession;
-                }
-                using (var transaction = session.BeginTransaction())
-                {
-                    var newRecoverySession = new Models.Authentication.RecoverySession.RecoverySession
-                    {
-                        UserId = userId,
-                        IsOpened = false,
-                        ExpiryDate = DateTime.UtcNow.AddMinutes(10)
-                    };
-
-                    session.Save(newRecoverySession);
-                    transaction.Commit();
-                    return newRecoverySession;
-                }
+            await _session.SaveAsync(recoverySession);
+            _unitOfWork.Commit();
+        }
+        catch
+        {
+            _unitOfWork.Rollback();
+            throw;
         }
     }
 
-    public bool OpenRecoverySession(Guid id)
+    public async Task<Models.Authentication.RecoverySession.RecoverySession?> GetSessionByUserId(Guid userId)
     {
-        using (var session = _sessionFactory.OpenSession())
+        return await _session.Query<Models.Authentication.RecoverySession.RecoverySession>()
+            .FirstOrDefaultAsync(x => x.UserId.Equals(userId) && x.ExpiryDate > DateTime.UtcNow);
+    }
+    
+    public async Task<Models.Authentication.RecoverySession.RecoverySession?> GetSessionByRecoveryId(Guid id)
+    {
+        return await _session.Query<Models.Authentication.RecoverySession.RecoverySession>()
+            .FirstOrDefaultAsync(x => x.Id.Equals(id) && x.ExpiryDate > DateTime.UtcNow);
+    }
+
+    public async Task UpdateSession(Models.Authentication.RecoverySession.RecoverySession recoverySession)
+    {
+        _unitOfWork.BeginTransaction();
+        try
         {
-            var existingSession = session.Query<Models.Authentication.RecoverySession.RecoverySession>()
-                .FirstOrDefault(x => x.Id.Equals(id));
-                
-            if (existingSession == null)
-            {
-                return false;
-            }
-            
-            using (var transaction = session.BeginTransaction())
-            {
-                existingSession.IsOpened = true;
-                existingSession.ExpiryDate.AddMinutes(5);
-                
-                session.Save(existingSession);
-                transaction.Commit();
-                return true;
-            }
+            await _session.UpdateAsync(recoverySession);
+            _unitOfWork.Commit();
+        }
+        catch
+        {
+            _unitOfWork.Rollback();
+            throw;
         }
     }
 
-    public bool CloseRecoverySession(string email)
+    public async Task DeleteSession(Guid sessionId)
     {
-        using (var session = _sessionFactory.OpenSession())
+        _unitOfWork.BeginTransaction();
+        try
         {
-            var existingSession = session.Query<Models.Authentication.RecoverySession.RecoverySession>()
-                .Join(session.Query<Models.Authentication.UserEntity.UserEntity>(),
-                    recoverySession => recoverySession.UserId,
-                    userEntity => userEntity.Id,
-                    (recoverySession, userEntity) => new { RecoverySession = recoverySession, UserEntity = userEntity })
-                .Where(joined => joined.UserEntity.Email == email)
-                .Select(joined => joined.RecoverySession)
-                .FirstOrDefault();
-                
-            if (existingSession == null)
+            var recoverySession = await _session.GetAsync<Models.Authentication.RecoverySession.RecoverySession>(sessionId);
+            if (recoverySession != null)
             {
-                return false;
+                await _session.DeleteAsync(recoverySession);
+                _unitOfWork.Commit();
             }
-            
-            using (var transaction = session.BeginTransaction())
-            {
-                session.Delete(existingSession);
-                transaction.Commit();
-                return true;
-            }
+        }
+        catch
+        {
+            _unitOfWork.Rollback();
+            throw;
         }
     }
     

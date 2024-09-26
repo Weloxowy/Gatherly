@@ -1,10 +1,12 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Azure;
 using DotNetEnv;
 using gatherly.server.Models.Authentication.UserEntity;
 using gatherly.server.Models.Tokens.BlacklistToken;
 using gatherly.server.Models.Tokens.RefreshToken;
 using gatherly.server.Models.Tokens.TokenEntity;
+using gatherly.server.Persistence.Tokens;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
@@ -25,7 +27,8 @@ public class TokensController : ControllerBase
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ITokenEntityService _tokenEntityService;
     private readonly IUserEntityService _userEntityService;
-
+    private readonly TokenHelper _tokenHelper;
+    
     /// <summary>
     ///     Initializes a new instance of the <see cref="TokensController"/> class.
     /// </summary>
@@ -34,12 +37,13 @@ public class TokensController : ControllerBase
     /// <param name="userEntityService">Service for user-related operations.</param>
     /// <param name="blacklistTokenService">Service for managing blacklisted tokens.</param>
     public TokensController(ITokenEntityService tokenEntityService, IRefreshTokenService refreshTokenService,
-        IUserEntityService userEntityService, IBlacklistTokenService blacklistTokenService)
+        IUserEntityService userEntityService, IBlacklistTokenService blacklistTokenService, TokenHelper tokenHelper)
     {
         _tokenEntityService = tokenEntityService;
         _refreshTokenService = refreshTokenService;
         _userEntityService = userEntityService;
         _blacklistTokenService = blacklistTokenService;
+        _tokenHelper = tokenHelper;
     }
 
     /// <summary>
@@ -67,31 +71,11 @@ public class TokensController : ControllerBase
                 return BadRequest("The refresh token was not found or is inactive. Check the token status.");
 
             var userId = oldRefreshToken.UserId;
-            var userEntity = _userEntityService.GetUserInfo(userId);
+            var userEntity = await _userEntityService.GetUserInfo(userId);
             if (userEntity == null) return NotFound("User not found.");
-
-            var newRefreshToken = _refreshTokenService.GenerateRefreshToken(userId);
-            var newJwtToken = _tokenEntityService.GenerateToken(userEntity, newRefreshToken.Id.ToString());
-
-            var jwtCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddMinutes(15)
-            };
-
-            var refreshCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddHours(1)
-            };
-
-            Response.Cookies.Append("Authorization", "Bearer " + newJwtToken, jwtCookieOptions);
-            Response.Cookies.Append("RefreshToken", newRefreshToken.Token, refreshCookieOptions);
-
+            var tokens = _tokenHelper.GenerateTokens(userEntity);
+            CookieHelper.SetJwtCookie(Response, tokens.JwtToken);
+            CookieHelper.SetRefreshTokenCookie(Response, tokens.RefreshToken);
             return Ok("The tokens are refreshed");
         }
         catch (SecurityTokenException ex)
@@ -231,7 +215,7 @@ public class TokensController : ControllerBase
                 if (userEmail.IsNullOrEmpty())
                     return BadRequest("User id is incorrect. Check if the account wasnt deleted");
                 
-                var user = _userEntityService.GetUserInfo(userEmail);
+                var user = await _userEntityService.GetUserInfo(userEmail);
                 
                 var jti = jsonToken.Claims.FirstOrDefault(claim => claim.Type == JwtRegisteredClaimNames.Jti)?.Value;
                 
@@ -243,9 +227,8 @@ public class TokensController : ControllerBase
                 _blacklistTokenService.AddToBlacklist(jwtToken, user.Id, DateTime.UtcNow.AddHours(2));
                 _blacklistTokenService.AddToBlacklist(jti, user.Id, DateTime.UtcNow.AddHours(2));
                 
-                Response.Cookies.Delete("Authorization");
-                Response.Cookies.Delete("RefreshToken");
-
+                CookieHelper.ClearCookies(Response);
+                
                 return Ok("Tokens revoked successfully.");
             }
             catch (Exception ex)
@@ -267,8 +250,7 @@ public class TokensController : ControllerBase
                 await _refreshTokenService.RevokeRefreshToken(refreshToken);
                 _blacklistTokenService.AddToBlacklist(refreshToken, userId, DateTime.UtcNow.AddHours(2));
 
-                Response.Cookies.Delete("Authorization");
-                Response.Cookies.Delete("RefreshToken");
+                CookieHelper.ClearCookies(Response);
 
                 return Ok("Tokens revoked successfully.");
             }

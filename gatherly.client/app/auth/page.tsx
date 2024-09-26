@@ -21,7 +21,7 @@ export default function Auth() {
                         {authMethod === authOptions.loginTraditional && (
                             <>
                                 <>
-                                    Wpisz poniżej adres mailowy aby się zalogować.
+                                    Wpisz poniżej adres mailowy aby się zalogować.&nbsp;
                                 </>
                                 <Anchor component="button" size="md"
                                         onClick={() => setAuthMethod(authOptions.register)}>
@@ -34,7 +34,7 @@ export default function Auth() {
                             <>
                                 <>
                                     Wpisz poniżej adres mailowy aby się zalogować poprzez usługę jednorazowego
-                                    logowania.
+                                    logowania.&nbsp;
                                 </>
                                 <Anchor component="button" size="md"
                                         onClick={() => setAuthMethod(authOptions.register)}>
@@ -46,7 +46,7 @@ export default function Auth() {
                         {authMethod === authOptions.register && (
                             <>
                                 <>
-                                    Zarejestruj się aby móc korzystać z usług.
+                                    Zarejestruj się aby móc korzystać z usług.&nbsp;
                                 </>
                                 <Anchor component="button" size="md"
                                         onClick={() => setAuthMethod(authOptions.loginTraditional)}>
@@ -58,7 +58,7 @@ export default function Auth() {
                         {authMethod === authOptions.recover && (
                             <>
                                 <>
-                                    Wpisz poniżej adres email aby zresetować hasło.
+                                    Wpisz poniżej adres email aby zresetować hasło.&nbsp;
                                 </>
                                 <Anchor component="button" size="md"
                                         onClick={() => setAuthMethod(authOptions.loginTraditional)}>

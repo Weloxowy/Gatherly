@@ -12,7 +12,6 @@ using System.Text.Json;
 using FluentNHibernate.Conventions;
 using gatherly.server.Models.Chat.Chat;
 using Microsoft.IdentityModel.Tokens;
-using NHibernate.Criterion;
 
 namespace gatherly.server.Controllers.Meetings;
 
@@ -71,13 +70,13 @@ public class MeetingsController : ControllerBase
     /// <response code="500">An internal server error occurred.</response>
     [HttpGet("{meetingId}")]
     [Authorize]
-    public async Task<ActionResult<Entities.Meetings.FullMeetingDTOInfo>> GetMeetingById(Guid meetingId)
+    public async Task<ActionResult<FullMeetingDTOInfo>> GetMeetingById(Guid meetingId)
     {
         try
         {
             var requestingUser = _tokenService.GetIdFromRequestCookie(HttpContext);
             var meeting = await _meetingService.GetMeetingById(meetingId);
-            var user = _userService.GetUserInfo(meeting.OwnerId);
+            var user = await _userService.GetUserInfo(meeting.OwnerId);
             if (meeting == null)
             {
                 return NotFound("Meeting not found.");
@@ -715,7 +714,7 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
             {
                 return Unauthorized("Owner cannot delete themselves out of the meeting");
             }
-            var user = _userService.GetUserInfo(userMeeting.UserId);
+            var user = await _userService.GetUserInfo(userMeeting.UserId);
             await _userMeetingService.DeleteUserMeetingEntity(newUserMeeting.Id);
             await _chatService.SaveSystemMessageAsync(userMeeting.MeetingId,
                 $"Użytkownik {user.Name} został usunięty ze spotkania.");
@@ -766,7 +765,7 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
                 return NotFound("Meeting not found");
             }
             await _userMeetingService.DeleteUserMeetingEntity(newUserMeeting.Id);
-            var user = _userService.GetUserInfo(Guid.Parse(userId));
+            var user = await _userService.GetUserInfo(Guid.Parse(userId));
             await _chatService.SaveSystemMessageAsync(meetingId,
                 $"Użytkownik {user.Name} wyszedł ze spotkania.");
 
@@ -813,7 +812,7 @@ public async Task<ActionResult> ChangeMeetingData([FromBody] MeetingDTOUpdate me
                 return BadRequest("Invitation status value is not correct");
             }
             await _userMeetingService.ChangeInvitationStatus(userMeetingId.Value,invitationStatus);
-            var user = _userService.GetUserInfo(Guid.Parse(userId));
+            var user = await _userService.GetUserInfo(Guid.Parse(userId));
             await _chatService.SaveSystemMessageAsync(meetingId,
                 $"Użytkownik {user.Name} zmienił status na \"{invitationStatus}\".");
 

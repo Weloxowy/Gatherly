@@ -53,7 +53,7 @@ public class AuthorizationController : ControllerBase
         {
             return NotFound("User not found");
         }
-        return _userService.IsUserExists(email) == false ? NotFound("User not found") : Ok("User exists");
+        return await _userService.IsUserExists(email) == false ? NotFound("User not found") : Ok("User exists");
     }
     
     /// <summary>
@@ -76,7 +76,7 @@ public class AuthorizationController : ControllerBase
         {
             return NotFound("User not found");
         }
-        return _userService.IsUserAdmin(email) == false ? NotFound("User is not an admin or doesnt exist") : Ok("User is an admin");
+        return await _userService.IsUserAdmin(email) == false ? NotFound("User is not an admin or doesnt exist") : Ok("User is an admin");
     }
     
     /// <summary>
@@ -102,7 +102,7 @@ public class AuthorizationController : ControllerBase
             return NotFound("User not found");
         }
 
-        if (_userService.IsUserAdmin(email) == false)
+        if (await _userService.IsUserAdmin(email) == false)
         {
             return Unauthorized("You are not an admin.");
         }

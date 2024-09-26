@@ -4,15 +4,15 @@ namespace gatherly.server.Models.Authentication.UserEntity;
 
 public interface IUserEntityService
 {
-    public UserEntity? GetUserInfo(string email); //pobieranie danych o uzytkowniku poprzez maila
-    public UserEntity? GetUserInfo(Guid id); //pobieranie danych o uzytkowniku poprzez id
-    public bool IsUserExists(string email); //sprawdzenie czy uzytkownik istnieje
-    public bool IsUserAdmin(string email); //sprawdzenie czy uzytkownik jest adminem
-    public UserEntity? PatchUserInfo(UserEntityDTOUpdate newData, string email);
-    public bool DeleteUserInfo(string email);
-    public UserEntity? CreateNewUser(UserEntityDTOCreate newData);
-    public UserEntity? VerifyUser(UserEntityDTOLoginPassword data);
-    public UserEntity? ChangeUserPassword(UserEntityDTOResetPassword data);
+    public Task<UserEntity?> GetUserInfo(string email);
+    public Task<UserEntity?> GetUserInfo(Guid id);
+    public Task<bool> IsUserExists(string email);
+    public Task<bool> IsUserAdmin(string email);
+    public Task<UserEntity?> PatchUserInfo(UserEntityDTOUpdate newData, string email);
+    public Task<bool> DeleteUserInfo(string email);
+    public Task<UserEntity?> CreateNewUser(UserEntityDTOCreate newData);
+    public Task<UserEntity?> VerifyUser(UserEntityDTOLoginPassword data);
+    public Task<UserEntity?> ChangeUserPassword(UserEntityDTOResetPassword data);
     public Task<UserEntity> ChangeUserStatus(Guid id);
 
 }

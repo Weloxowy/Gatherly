@@ -1,5 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using FluentNHibernate.Conventions;
+﻿using FluentNHibernate.Conventions;
 using gatherly.server.Entities.Authentication;
 using gatherly.server.Models.Authentication.RecoverySession;
 using gatherly.server.Models.Authentication.SsoSession;
@@ -8,6 +7,7 @@ using gatherly.server.Models.Mailing.MailEntity;
 using gatherly.server.Models.Tokens.BlacklistToken;
 using gatherly.server.Models.Tokens.RefreshToken;
 using gatherly.server.Models.Tokens.TokenEntity;
+using gatherly.server.Persistence.Tokens;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +16,7 @@ namespace gatherly.server.Controllers.Authentication;
 /// <summary>
 ///     Controller for user authentication operations.
 /// </summary>
-[Route("api/auth")]
+[Route("/api/auth")]
 [ApiController]
 public class AuthenticationController : ControllerBase
 {
@@ -26,10 +26,11 @@ public class AuthenticationController : ControllerBase
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ISsoSessionService _ssoSessionService;
     private readonly ITokenEntityService _tokenEntityService;
+    private readonly TokenHelper _tokenHelper;
     private readonly IUserEntityService _userService;
 
-    // <summary>
-    /// Constructor for AuthenticationController.
+    /// <summary>
+    ///     Constructor for AuthenticationController.
     /// </summary>
     /// <param name="userService">Service for user-related operations.</param>
     /// <param name="ssoSessionService">Service for SSO session operations.</param>
@@ -38,10 +39,11 @@ public class AuthenticationController : ControllerBase
     /// <param name="blacklistTokenService">Service for blacklist token operations.</param>
     /// <param name="mailEntityService">Service for mailing operations.</param>
     /// <param name="recoverySessionService">Service for account recovery operations.</param>
+    /// <param name="tokenHelper">Helper class for token-related operations.</param>
     public AuthenticationController(IUserEntityService userService, ISsoSessionService ssoSessionService,
         ITokenEntityService tokenEntityService, IRefreshTokenService refreshTokenService,
         IBlacklistTokenService blacklistTokenService, IMailEntityService mailEntityService,
-        IRecoverySessionService recoverySessionService)
+        IRecoverySessionService recoverySessionService, TokenHelper tokenHelper)
     {
         _userService = userService;
         _ssoSessionService = ssoSessionService;
@@ -50,6 +52,7 @@ public class AuthenticationController : ControllerBase
         _blacklistTokenService = blacklistTokenService;
         _mailEntityService = mailEntityService;
         _recoverySessionService = recoverySessionService;
+        _tokenHelper = tokenHelper;
     }
 
 
@@ -69,19 +72,17 @@ public class AuthenticationController : ControllerBase
     [HttpPost("login/code/send")]
     public async Task<IActionResult> SendSsoCode([FromBody] string email)
     {
-        var user = _userService.GetUserInfo(email);
+        var user = await _userService.GetUserInfo(email);
         if (user == null) return NotFound("User profile not found");
         try
         {
-            var ssoCode = _ssoSessionService.CreateSso(user.Id, email);
-            if (ssoCode == null) return NotFound("User profile not found");
+            var ssoCode = await _ssoSessionService.CreateSsoSessionAsync(user.Id, email);
             await _mailEntityService.SendSsoCodeEmailAsync(user, ssoCode);
             return Ok("Email was send");
         }
-        catch (Exception exception)
+        catch
         {
-            return StatusCode(500, exception.Message);
-            //return StatusCode(500, "There was a problem while creating a SSO token. Please try again later");
+            return StatusCode(500, "There was a problem while creating a SSO token. Please try again later");
         }
     }
 
@@ -99,36 +100,18 @@ public class AuthenticationController : ControllerBase
     /// <response code="500">Internal server error occurred.</response>
     [AllowAnonymous]
     [HttpPost("login/code/verify")]
-    public IActionResult VerifySsoCode([FromBody] UserEntityDTOLoginCode data)
+    public async Task<IActionResult> VerifySsoCode([FromBody] UserEntityDTOLoginCode data)
     {
-        var user = _userService.GetUserInfo(data.Email);
+        var user = await _userService.GetUserInfo(data.Email);
         if (user == null) return NotFound("User profile not found");
 
-        var ssoSession = _ssoSessionService.ValidSso(user.Id, data.Code);
+        var ssoSession = await _ssoSessionService.ValidateSsoSessionAsync(user.Id, data.Code);
         if (!ssoSession) return BadRequest("Wrong SSO code");
         try
         {
-            var refresh = _refreshTokenService.GenerateRefreshToken(user.Id);
-            var jwt = _tokenEntityService.GenerateToken(user, refresh.Id.ToString());
-
-            var jwtCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddMinutes(15)
-            };
-
-            var refreshCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddHours(1) // Czas ważności refresh tokenu
-            };
-
-            Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
-            Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
+            var tokens = _tokenHelper.GenerateTokens(user);
+            CookieHelper.SetJwtCookie(Response, tokens.JwtToken);
+            CookieHelper.SetRefreshTokenCookie(Response, tokens.RefreshToken);
 
             return Ok("Login successfully");
         }
@@ -152,41 +135,23 @@ public class AuthenticationController : ControllerBase
     /// <response code="500">Internal server error occurred.</response>
     [AllowAnonymous]
     [HttpPost("login/standard/verify")]
-    public IActionResult LoginUserByPassword([FromBody] UserEntityDTOLoginPassword data)
+    public async Task<IActionResult> LoginUserByPassword([FromBody] UserEntityDTOLoginPassword data)
     {
-        var isUser = _userService.IsUserExists(data.Email);
+        var isUser = await _userService.IsUserExists(data.Email);
         if (isUser == false) return NotFound("User profile not found");
-        var user = _userService.VerifyUser(data);
+        var user = await _userService.VerifyUser(data);
         if (user == null) return Unauthorized("Credentials are invalid");
         try
         {
-            var refresh = _refreshTokenService.GenerateRefreshToken(user.Id);
-            var jwt = _tokenEntityService.GenerateToken(user, refresh.Id.ToString());
-
-            var jwtCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddMinutes(15)
-            };
-
-            var refreshCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddHours(1)
-            };
-
-            Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
-            Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
+            var tokens = _tokenHelper.GenerateTokens(user);
+            CookieHelper.SetJwtCookie(Response, tokens.JwtToken);
+            CookieHelper.SetRefreshTokenCookie(Response, tokens.RefreshToken);
 
             return Ok("Login successfully");
         }
         catch
         {
-            return StatusCode(500, "There was a problem while proceeding a SSO token. Please try again later");
+            return StatusCode(500, "There was a problem while proceeding a validation. Please try again later");
         }
     }
 
@@ -204,67 +169,56 @@ public class AuthenticationController : ControllerBase
     /// <response code="500">Internal server error occurred.</response>
     [AllowAnonymous]
     [HttpPost("register")]
-    public ActionResult<UserEntity> CreateNewUser([FromBody] UserEntityDTOCreate data)
+    public async Task<ActionResult<UserEntity>> CreateNewUser([FromBody] UserEntityDTOCreate data)
     {
-        var user = _userService.GetUserInfo(data.Email);
-        if (user != null) return BadRequest("Email address is already used");
+        var isUserExists = await _userService.IsUserExists(data.Email);
+        if (isUserExists) return BadRequest("Email address is already used");
 
-        var newUser = _userService.CreateNewUser(data);
-        if (newUser == null) return StatusCode(500, "Wystąpił błąd podczas tworzenia użytkownika");
+        var newUser = await _userService.CreateNewUser(data);
+        if (newUser == null) return StatusCode(500, "There was a problem while creating new user.");
 
-        var refresh = _refreshTokenService.GenerateRefreshToken(newUser.Id);
-        var jwt = _tokenEntityService.GenerateToken(newUser, refresh.Id.ToString());
-
-        var jwtCookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddMinutes(15)
-        };
-
-        var refreshCookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddHours(1)
-        };
-
-        Response.Cookies.Append("Authorization", "Bearer " + jwt, jwtCookieOptions);
-        Response.Cookies.Append("RefreshToken", refresh.Token, refreshCookieOptions);
+        var tokens = _tokenHelper.GenerateTokens(newUser);
+        CookieHelper.SetJwtCookie(Response, tokens.JwtToken);
+        CookieHelper.SetRefreshTokenCookie(Response, tokens.RefreshToken);
 
         return Ok("Login successfully");
     }
 
-
+    /// <summary>
+    ///     Logged out an user.
+    /// </summary>
+    /// <remarks>
+    ///     This endpoint performs a logout operation.
+    /// </remarks>
+    /// <returns>Authentication tokens upon successful registration.</returns>
+    /// <response code="200">Logout performed successfully.</response>
+    /// <response code="500">Internal server error occurred.</response>
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<ActionResult> Logout()
     {
         var mail = _tokenEntityService.GetEmailFromRequestCookie(HttpContext);
-        if (mail.IsEmpty()) return Unauthorized("User profile not found");
-        var user = _userService.GetUserInfo(mail);
+        if (mail.IsEmpty() || mail == null)
+        {
+            return Unauthorized("User profile not found");
+        }
+        var user = await _userService.GetUserInfo(mail);
         if (user == null) return NotFound("User profile not found");
 
         var authorizationHeader = HttpContext.Request.Cookies["Authorization"];
         if (authorizationHeader == null || authorizationHeader.StartsWith("Bearer "))
-        {
             Response.Cookies.Delete("Authorization");
-        }
 
         var refreshTokenHeader = HttpContext.Request.Cookies["RefreshToken"];
         if (refreshTokenHeader != null)
         {
             var refreshToken = refreshTokenHeader.Trim();
             _blacklistTokenService.AddToBlacklist(refreshToken, user.Id, DateTime.UtcNow.AddHours(2));
-            _refreshTokenService.RevokeRefreshToken(refreshToken);
+            await _refreshTokenService.RevokeRefreshToken(refreshToken);
             Response.Cookies.Delete("RefreshToken");
         }
-        
+
         return Ok("User logged out successfully.");
     }
-
-    //reset - not tested
 
     /// <summary>
     ///     Sends a request to user mail to reset password.
@@ -280,21 +234,18 @@ public class AuthenticationController : ControllerBase
     /// <response code="500">Internal server error occurred.</response>
     [AllowAnonymous]
     [HttpPost("recover/send")]
-    public IActionResult SendRecover([FromBody] string email)
+    public async Task<ActionResult> SendRecover([FromBody] string email)
     {
-        var user = _userService.GetUserInfo(email);
+        var user = await _userService.GetUserInfo(email);
         if (user == null) return NotFound("User profile not found");
         try
         {
-            var session = _recoverySessionService.CreateSession(user.Id, email);
-            if (session == null)
-                return NotFound("There was a problem while creating a recovery link. Please try again later");
-            _mailEntityService.SendRecoveryEmailAsync(user, session);
-            return Ok("Email was send succesfully");
+            var session = await _recoverySessionService.CreateSession(user.Id, email);
+            await _mailEntityService.SendRecoveryEmailAsync(user, session);
+            return Ok("Email was send successfully");
         }
         catch
         {
-            //return StatusCode(500, exception.Message);
             return StatusCode(500, "There was a problem while creating a recovery link. Please try again later");
         }
     }
@@ -305,20 +256,19 @@ public class AuthenticationController : ControllerBase
     /// <remarks>
     ///     This endpoint checks is the recovery link is valid.
     /// </remarks>
-    /// <param name="id">Id of recovery session.</param>
+    /// <param name="id">ID of recovery session.</param>
     /// <response code="200">Returns OK message.</response>
     /// <response code="404">User with the provided email does not exist.</response>
     /// <response code="500">Internal server error occurred.</response>
     [AllowAnonymous]
     [HttpGet("recover/validate/{id}")]
-    public IActionResult ValidRecover(string id)
+    public async Task<ActionResult> ValidRecover(string id)
     {
         try
         {
-            var isValid = _recoverySessionService.OpenRecoverySession(Guid.Parse(id)); //isOpened = true
+            var isValid = await _recoverySessionService.OpenRecoverySession(Guid.Parse(id)); //isOpened = true
             if (isValid == false) return NotFound("Active recovery session not found");
             return Ok();
-            //return Redirect("https://localhost:3000/auth/recovery/"+id);
         }
         catch
         {
@@ -339,14 +289,16 @@ public class AuthenticationController : ControllerBase
     /// <response code="500">Internal server error occurred.</response>
     [AllowAnonymous]
     [HttpPost("recover/change")]
-    public IActionResult ApplyNewPasswordRecover([FromBody] UserEntityDTOResetPassword data)
+    public async Task<ActionResult> ApplyNewPasswordRecover([FromBody] UserEntityDTOResetPassword data)
     {
         try
         {
-            var session = _recoverySessionService.CloseRecoverySession(data.Email);
+            var user = await _userService.GetUserInfo(data.Email);
+            if (user == null) return NotFound("User with this email does not exists.");
+            var session = await _recoverySessionService.CloseRecoverySession(user.Id);
             if (session == false) return NotFound("Active recovery session not found");
 
-            var changePassword = _userService.ChangeUserPassword(data);
+            var changePassword = await _userService.ChangeUserPassword(data);
             return changePassword == null
                 ? StatusCode(500, "There was a problem while recovering your account. Please try again later")
                 : Ok("Recovery was successful");

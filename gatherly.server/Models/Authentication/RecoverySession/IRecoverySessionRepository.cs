@@ -2,7 +2,10 @@
 
 public interface IRecoverySessionRepository
 {
-    public RecoverySession CreateSession(Guid id, string email);
-    public bool OpenRecoverySession(Guid id);
-    public bool CloseRecoverySession(string email);
+    Task CreateSession(RecoverySession recoverySession);
+    Task<RecoverySession?> GetSessionByUserId(Guid userId);
+    Task<RecoverySession?> GetSessionByRecoveryId(Guid Id);
+    Task UpdateSession(RecoverySession recoverySession);
+    Task DeleteSession(Guid sessionId);
+
 }
