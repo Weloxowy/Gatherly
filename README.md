@@ -6,8 +6,6 @@
 This project is an online meeting scheduling application called **Gatherly**, developed using C#, React and Next.js. The platform allows users to schedule and manage meetings online with features such as calendar integration, real-time chat, guest invitations, and a time-coordination module. The backend is built with a combination of **ASP .NET Core** for the application logic and **NHibernate** for object-relational mapping (ORM), while **JWT** and **Refresh Tokens** are used for secure authentication. 
 The frontend is hosted on Vercel, while the backend and database are hosted on Azure.
 
-## Access the live version here
-https://gatherly-mocha.vercel.app/
 
 ## Technologies Used
 
